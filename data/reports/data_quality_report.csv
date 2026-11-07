@@ -1,0 +1,56 @@
+Check,Ticker,Dates,Detected,Kept,Excluded,Corrected,Justification
+Non-NYSE date,All,"2007-01-01, 2007-01-02, 2007-01-15, 2007-02-19, 2007-04-06, 2007-05-28, 2007-07-04, 2007-09-03, 2007-11-22, 2007-12-25 ...",186,0,186,0,NYSE closed; 185/186 dates match the previous observation; 1 first date(s) without predecessor
+Missing NYSE session,All,,0,0,0,0,No case
+Non-positive price or RI,SPY,,0,0,0,0,No case
+Daily return > 15%,SPY,,0,0,0,0,No case
+Stale series (5+ days),SPY,,0,0,0,0,No case
+Non-positive price or RI,EFA,,0,0,0,0,No case
+Daily return > 15%,EFA,2008-10-13,1,1,0,0,Kept: market moves consistent with the 2008-2009 and 2020 crises; Price and RI returns agree at displayed precision; SPY moves in the same direction; no obvious data error
+Stale series (5+ days),EFA,,0,0,0,0,No case
+Non-positive price or RI,EEM,,0,0,0,0,No case
+Daily return > 15%,EEM,"2008-10-13, 2008-10-15, 2008-10-28",3,3,0,0,Kept: market moves consistent with the 2008-2009 and 2020 crises; Price and RI returns agree at displayed precision; SPY moves in the same direction; no obvious data error
+Stale series (5+ days),EEM,,0,0,0,0,No case
+Non-positive price or RI,IEF,,0,0,0,0,No case
+Daily return > 15%,IEF,,0,0,0,0,No case
+Stale series (5+ days),IEF,,0,0,0,0,No case
+Non-positive price or RI,LQD,,0,0,0,0,No case
+Daily return > 15%,LQD,,0,0,0,0,No case
+Stale series (5+ days),LQD,,0,0,0,0,No case
+Non-positive price or RI,TLT,,0,0,0,0,No case
+Daily return > 15%,TLT,,0,0,0,0,No case
+Stale series (5+ days),TLT,,0,0,0,0,No case
+Non-positive price or RI,VNQ,,0,0,0,0,No case
+Daily return > 15%,VNQ,"2008-10-28, 2008-11-24, 2008-12-01, 2009-03-23, 2020-03-16",5,5,0,0,Kept: market moves consistent with the 2008-2009 and 2020 crises; Price and RI returns agree at displayed precision; SPY moves in the same direction; no obvious data error
+Stale series (5+ days),VNQ,,0,0,0,0,No case
+Non-positive price or RI,GLD,,0,0,0,0,No case
+Daily return > 15%,GLD,,0,0,0,0,No case
+Stale series (5+ days),GLD,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),SPY,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EFA,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EEM,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),IEF,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),SPY,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EFA,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EEM,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),IEF,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
+Incomplete final month,All,2026-11-30,1,0,1,0,Data end before month-end; monthly return not computed
+Missing month-end,All,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),SPY,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EFA,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),EEM,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),IEF,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
+Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
+Incomplete final month,All,2026-11-30,1,0,1,0,Data end before month-end; monthly return not computed
+Missing month-end,All,,0,0,0,0,No case
+Risk-free rate missing on NYSE session,DGS1MO,"2007-10-08, 2007-11-12, 2008-10-13, 2008-11-11, 2009-10-12, 2009-11-11, 2010-10-11, 2010-11-11, 2011-10-10, 2011-11-11 ...",38,0,0,0,To be filled with last published rate (V1.4 rule); transformation postponed
