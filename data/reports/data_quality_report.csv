@@ -33,24 +33,6 @@ Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
 Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
 Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
 Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),SPY,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),EFA,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),EEM,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),IEF,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
-Incomplete final month,All,2026-11-30,1,0,1,0,Data end before month-end; monthly return not computed
-Missing month-end,All,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),SPY,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),EFA,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),EEM,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),IEF,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),LQD,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),TLT,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),VNQ,,0,0,0,0,No case
-Negative RI - Price gap (> 0.1 pp),GLD,,0,0,0,0,No case
 Incomplete final month,All,2026-11-30,1,0,1,0,Data end before month-end; monthly return not computed
 Missing month-end,All,,0,0,0,0,No case
 Risk-free rate missing on NYSE session,DGS1MO,"2007-10-08, 2007-11-12, 2008-10-13, 2008-11-11, 2009-10-12, 2009-11-11, 2010-10-11, 2010-11-11, 2011-10-10, 2011-11-11 ...",38,0,0,0,To be filled with last published rate (V1.4 rule); transformation postponed
