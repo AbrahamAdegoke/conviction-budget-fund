@@ -6,7 +6,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))   # so the page also runs on its own
 
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -14,59 +13,99 @@ from app import common
 from src import config
 from src.data import TICKERS
 
-st.title("Results")
+common.header("Results", "Did the views add value after costs, within the risk budget?")
 net, gross, log, metrics, yearly = common.results()
 labels = common.PORTFOLIO_LABELS
-st.caption(f"Walk-forward backtest {net.index[0]:%d %b %Y} – {net.index[-1]:%d %b %Y}, monthly decisions, "
-           "next-day trading, 5 bp cost on traded notional, automatic views at 50% confidence. "
-           "Base case: the manual view and the sliders do not change these results.")
+st.caption(f"Walk-forward backtest {net.index[0]:%d %b %Y} – {net.index[-1]:%d %b %Y} · monthly decisions, "
+           "next-day trading, 5 bp cost on traded notional, automatic views at 50% confidence · "
+           "base case: the sliders and the manual view do not change these results.")
 
 # --- Headline metrics ----------------------------------------------------------------------------
+full, te_only = metrics.loc["bl_full"], metrics.loc["bl_te_only"]
 c1, c2, c3, c4 = st.columns(4)
-full = metrics.loc["bl_full"]
-c1.metric("Active return (full mandate, net)", common.pct(full["Active return (net)"]))
-c2.metric("Realized tracking error", common.pct(full["Realized TE"]), help=f"Ex-ante budget {config.TE_TARGET:.0%}")
-c3.metric("Information ratio", f"{full['Information ratio']:.2f}")
-c4.metric("Cost per year", common.pct(full["Cost (per year)"]))
+c1.metric("Active return, full mandate (net)", common.pct(full["Active return (net)"]), border=True,
+          delta=f"TE budget only: {te_only['Active return (net)']:+.2%}", delta_color="off")
+c2.metric("Realized tracking error", common.pct(full["Realized TE"]), border=True,
+          delta=f"Ex-ante budget {config.TE_TARGET:.0%}", delta_color="off")
+c3.metric("Information ratio", f"{full['Information ratio']:.2f}", border=True,
+          delta=f"t-stat {full['t-stat active return']:.2f}", delta_color="off")
+c4.metric("Cost per year", common.pct(full["Cost (per year)"]), border=True,
+          delta=f"Turnover {full['Turnover (two-way, per year)']:.0%} a year", delta_color="off")
 
-pct_rows = [r for r in metrics.columns if r not in ("Sharpe", "Information ratio", "t-stat active return")]
-show = metrics.rename(index=labels).T
-st.dataframe(show.apply(lambda row: row.map(lambda v: "" if pd.isna(v) else
-                                            (f"{v:.2%}" if row.name in pct_rows else f"{v:.2f}")), axis=1),
-             width="stretch")
 
-# --- Cumulative performance ----------------------------------------------------------------------
-tab1, tab2, tab3 = st.tabs(["Growth of $1", "Cumulative active return", "Tracking error by year"])
+def series_fig(df, title, yfmt, hover_fmt):
+    fig = go.Figure([go.Scatter(x=df.index, y=df[c], name=labels[c], mode="lines",
+                                line=dict(color=common.COLORS[c], width=2),
+                                hovertemplate=f"{labels[c]}: %{{y:{hover_fmt}}}<extra></extra>")
+                     for c in df.columns])
+    for x0, x1, text in [("2020-02-19", "2020-04-30", "COVID"), ("2022-01-01", "2022-10-31", "2022 rates")]:
+        fig.add_vrect(x0=x0, x1=x1, fillcolor="#e1e0d9", opacity=0.45, line_width=0,
+                      annotation_text=text, annotation_position="top left",
+                      annotation_font=dict(size=11, color=common.MUTED))
+    common.style(fig, title, yfmt, height=420).update_layout(hovermode="x unified")
+    return fig
+
+
+# --- Performance charts --------------------------------------------------------------------------
+tab1, tab2, tab3, tab4 = st.tabs(["Growth of $1", "Cumulative active return", "Drawdown",
+                                  "Tracking error by year"])
 with tab1:
-    fig = px.line((1 + net).cumprod().rename(columns=labels), labels={"value": "Value", "variable": ""})
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(series_fig((1 + net).cumprod(), "Growth of $1 (net of costs)", ".2f", ".3f"),
+                    width="stretch")
 with tab2:
     active = net.drop(columns="benchmark").sub(net["benchmark"], axis=0)
-    fig = px.line((1 + active).cumprod().sub(1).rename(columns=labels),
-                  labels={"value": "Cumulative active return", "variable": ""})
-    fig.update_layout(yaxis_tickformat=".1%")
+    fig = series_fig((1 + active).cumprod() - 1, "Cumulative active return vs benchmark", ".1%", "+.2%")
+    fig.add_hline(y=0, line_color="#c3c2b7", line_width=1)
     st.plotly_chart(fig, width="stretch")
 with tab3:
-    te = yearly["Realized TE"].rename(columns=labels)
-    fig = go.Figure([go.Bar(name=c, x=te.index.astype(str), y=te[c]) for c in te.columns])
-    fig.add_hline(y=config.TE_TARGET, line_dash="dash", annotation_text="2% ex-ante budget")
-    fig.update_layout(barmode="group", yaxis_tickformat=".1%")
-    st.plotly_chart(fig, width="stretch")
+    nav = (1 + net).cumprod()
+    st.plotly_chart(series_fig(nav / nav.cummax() - 1, "Drawdown from previous peak", ".0%", ".1%"),
+                    width="stretch")
+with tab4:
+    te = yearly["Realized TE"]
+    fig = go.Figure([go.Bar(name=labels[c], x=te.index.astype(str), y=te[c], marker_color=common.COLORS[c],
+                            hovertemplate=f"{labels[c]}<br>%{{x}}: %{{y:.2%}}<extra></extra>")
+                     for c in ["bl_full", "bl_te_only"]])
+    fig.add_hline(y=config.TE_TARGET, line_dash="dash", line_color=common.INK, line_width=1,
+                  annotation_text="2% ex-ante budget", annotation_position="top left")
+    fig.update_layout(barmode="group", bargap=0.3, bargroupgap=0.08)
+    st.plotly_chart(common.style(fig, "Realized tracking error by calendar year", ".1%", height=420),
+                    width="stretch")
+
+# --- Metrics table -------------------------------------------------------------------------------
+st.subheader("All metrics")
+ratios = ["Sharpe", "Information ratio", "t-stat active return"]
+key_rows = ["Active return (net)", "Realized TE", "Information ratio"]
+show = metrics.T[["benchmark", "bl_te_only", "bl_full"]].rename(columns=labels)
+fmt = lambda row: row.map(lambda v: "–" if pd.isna(v) or (v == 0 and row.name != "Return (CAGR)") else
+                          (f"{v:.2f}" if row.name in ratios else f"{v:.2%}"))
+st.dataframe(show.apply(fmt, axis=1).style.apply(
+                 lambda row: ["background-color: #e8f0fb" if row.name in key_rows else ""] * len(row), axis=1),
+             width="stretch", height=560)
+st.caption("Annualized except drawdowns and ES (daily). Benchmark active metrics are zero by construction (–). "
+           "Benchmark turnover is its monthly rebalancing, charged no cost.")
 
 # --- Weights and trading over time ---------------------------------------------------------------
+st.divider()
 st.subheader("Weights and trading over time")
 choice = st.radio("Portfolio", ["bl_full", "bl_te_only"], format_func=labels.get, horizontal=True)
 sub = log.loc[log["portfolio"] == choice].set_index("month")
 sub.index = sub.index.to_timestamp()
 w = sub[[f"w_{t}" for t in TICKERS]].set_axis(TICKERS, axis=1)
-fig = px.area(w, labels={"value": "Weight", "month": "", "variable": ""})
-fig.update_layout(yaxis_tickformat=".0%")
-st.plotly_chart(fig, width="stretch")
-fig = px.bar(sub["traded"], labels={"value": "Traded (two-way)", "month": ""})
-fig.add_hline(y=config.MAX_TURNOVER, line_dash="dash", annotation_text="20% cap")
-fig.update_layout(yaxis_tickformat=".0%", showlegend=False)
-st.plotly_chart(fig, width="stretch")
+fig = go.Figure([go.Scatter(x=w.index, y=w[t], name=t, stackgroup="one", mode="lines",
+                            line=dict(width=0.5, color="#fcfcfb"), fillcolor=common.ETF_COLORS[t],
+                            hovertemplate=f"{t}: %{{y:.1%}}<extra></extra>") for t in TICKERS])
+fig.update_layout(hovermode="x unified")
+st.plotly_chart(common.style(fig, "Target weights at each decision", ".0%", height=400).update_yaxes(range=[0, 1]),
+                width="stretch")
+
+fig = go.Figure(go.Bar(x=sub.index, y=sub["traded"], marker_color=common.COLORS[choice],
+                       hovertemplate="%{x|%b %Y}: %{y:.1%}<extra></extra>"))
+fig.add_hline(y=config.MAX_TURNOVER, line_dash="dash", line_color=common.INK, line_width=1,
+              annotation_text="20% two-way cap", annotation_position="top left")
+st.plotly_chart(common.style(fig, "Traded each month (two-way)", ".0%", height=300), width="stretch")
 relaxed = sub["relaxed_turnover_cap"].dropna()
 if len(relaxed):
     st.caption("Turnover cap relaxed to keep TE ≤ 2%: "
-               + ", ".join(f"{d:%Y-%m} ({c:.0%})" for d, c in relaxed.items()))
+               + ", ".join(f"{d:%b %Y} (to {c:.0%})" for d, c in relaxed.items())
+               + ". Trades are measured on the trade day, so they can sit slightly above the cap.")

@@ -70,3 +70,43 @@ def results():
 
 def pct(x, digits=2):
     return f"{x:.{digits}%}"
+
+
+# --- Look and feel -------------------------------------------------------------------------------
+# One colour per portfolio on every chart; benchmark in neutral ink (it is the reference).
+COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834"}
+LABEL_COLORS = {PORTFOLIO_LABELS[k]: v for k, v in COLORS.items()}
+ETF_COLORS = dict(zip(TICKERS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
+                                "#e87ba4", "#008300", "#6250d6", "#e34948"]))
+OVER, UNDER = "#2a78d6", "#e34948"           # diverging pair for active weights
+INK, MUTED, GRID = "#0b0b0b", "#898781", "#e1e0d9"
+
+
+def header(title, question):
+    st.title(title)
+    st.markdown(f"<p style='color:#52514e;font-size:1.05rem;margin-top:-0.6rem'>{question}</p>",
+                unsafe_allow_html=True)
+
+
+def style(fig, title=None, yfmt=None, height=380):
+    """Shared Plotly layout: quiet grid, legend on top, percent axes and hovers."""
+    fig.update_layout(
+        template="plotly_white", height=height, margin=dict(l=10, r=10, t=50 if title else 20, b=10),
+        title=dict(text=title, font=dict(size=15, color=INK), x=0, xanchor="left") if title else None,
+        font=dict(family="system-ui, -apple-system, Segoe UI, sans-serif", color="#52514e", size=12),
+        legend=dict(orientation="h", y=1.02, yanchor="bottom", x=1, xanchor="right", title=None),
+        hoverlabel=dict(bgcolor="white", font_size=12), plot_bgcolor="#fcfcfb", paper_bgcolor="#fcfcfb",
+    )
+    fig.update_xaxes(showgrid=False, linecolor="#c3c2b7", title=None)
+    fig.update_yaxes(gridcolor=GRID, zeroline=False, linecolor="#c3c2b7", tickformat=yfmt)
+    return fig
+
+
+def sidebar_summary():
+    """Current choices, always visible during the demo."""
+    s = st.session_state
+    mv = manual_view()
+    st.sidebar.markdown("**Current choices**")
+    st.sidebar.markdown(
+        f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nView confidence: **{s.confidence:.0%}**  \n"
+        + (f"Manual view: **{mv['long']} > {mv['short']} (+{s.mv_q:.1f}%)**" if mv else "Manual view: none"))
