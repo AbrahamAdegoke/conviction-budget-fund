@@ -1,7 +1,7 @@
 # Open decisions: Black-Litterman and optimizer
 
 
-**Last updated:** 11 November 2026
+**Last updated:** 14 November 2026
 **Code:** `src/black_litterman.py`, `src/optimizer.py`, `src/config.py`, notebook `02_bl_optimizer.ipynb`
 **Interface for the backtest and the app:** `docs/optimizer_interface.md`
 
@@ -38,13 +38,14 @@ Tick the box and record the choice once the team has agreed.
   - The K/cap calibration (5% cap binding about 10% of the time on 2009–2015) still makes sense, read as "momentum alpha".
   - `journal_donnees.md` and the report must describe Q this way.
 - **Action:** disscus to confirm and update the wording in the journal. [ ] done
+- **Decision (14 Nov):** [X] keep the equilibrium-relative reading. To confirm with Abraham, who updates the wording in `journal_donnees.md` and the report.
 
 ### 3. Meaning of the manual view in the app
 - **Who:** Assia (app), Mustafa
 - **Current implementation:** the manual view's `q` is also measured on top of equilibrium (same reading as item 2).
 - **Risk:** a user typing "SPY beats TLT by 2%" will expect a total spread.
 - **Recommendation:** keep it consistent with item 2 and show the prior spread next to the input. It is available in `diag["views"]["prior_spread"]`.
-- **Decision:** [ ] agreed
+- **Decision (14 Nov):** [X] agreed: same reading as item 2; the app shows the prior spread next to the input (task 9). To confirm with Mustafa.
 
 ### 4. The confidence slider barely moves the portfolio
 - **Who:** Assia (app), whole team (presentation)
@@ -53,7 +54,7 @@ Tick the box and record the choice once the team has agreed.
 - **Options:**
   - Explain it in the demo, and use the manual view (with its own confidence) as the interactive part.
   - Change the method so that TE grows with conviction up to 2% (option c from the first discussion). Not recommended this close to the deadline.
-- **Decision:** [ ] explain in demo  [ ] other
+- **Decision (14 Nov):** [X] explain in demo  [ ] other. The manual view is the interactive part of the demo.
 
 ### 5. Turnover cap: definition
 - **Who:** whole team
@@ -67,7 +68,7 @@ Tick the box and record the choice once the team has agreed.
   | Median ex-ante active return | 0.26% | 0.26% |
 
   A 20% one-way cap (= 40% two-way) barely binds (mean turnover 24.3%).
-- **Decision:** [ ] two-way 20% (current)  [ ] one-way 20% → set `MAX_TURNOVER = 0.40` in `src/config.py`
+- **Decision (14 Nov):** [X] two-way 20% (current)  [ ] one-way 20% → set `MAX_TURNOVER = 0.40` in `src/config.py`. The one-way cap barely binds; two-way cuts turnover with no loss of ex-ante active return.
 
 ### 6. When the turnover cap makes the problem infeasible
 - **Who:** whole team
@@ -75,31 +76,53 @@ Tick the box and record the choice once the team has agreed.
 - **Where it happens:** only 2020-03. After the COVID volatility jump, last month's portfolio had an ex-ante TE of 4.9%; with 20% turnover the best reachable TE was 2.25%. The cap was relaxed to 25%.
 - **Alternative:** keep the cap and accept 2.25% TE for that month.
 - **Recommendation:** current rule. The TE budget is the fund's main promise; the cap is an optional extra from the plan.
-- **Decision:** [ ] relax the cap (current)  [ ] keep the cap, allow TE > 2%
+- **Decision (14 Nov):** [X] relax the cap (current)  [ ] keep the cap, allow TE > 2%. In the backtest it happens only in 2020-03 (both BL portfolios), flagged in `monthly_log.csv`.
 
 ### 7. Large swaps inside the bond block
 - **Who:** Mustafa, after Assia's first backtest
 - **Issue:** IEF, LQD and TLT are about 0.86 correlated, so swapping between them costs little TE. The optimizer takes large positions for small α differences (2026-10: IEF 15% → 3.7%, LQD 10% → 21%, TLT 10% → 0%). Median active share is 24% with the cap (26% without). This is the "error maximiser" problem from LN3; the turnover cap slows it but does not remove it.
 - **Option:** a cap on each active weight, e.g. |xᵢ − bᵢ| ≤ 10%.
 - **Decision rule:** look at realized TE vs ex-ante 2% and at the contribution of bond swaps in the backtest. Add the cap only if realized TE is clearly above target or the bond swaps lose money.
-- **Decision:** [ ] no change  [ ] add active-weight cap
+- **Backtest evidence (14 Nov, Jan 2016 – Oct 2026):** realized TE 2.34% (full mandate) and 2.36% (TE budget only) vs 2% ex ante.
+  Bond swaps inside the bond block: about −0.04% a year (full) and −0.11% (TE only); equities contribute about +0.55% / +0.68%
+  (rough estimate: monthly returns × target weights, before costs).
+- **Decision (14 Nov):** [X] no change  [ ] add active-weight cap. The decision rule is technically triggered but the effect is small,
+  and changing the optimizer on code-freeze day is riskier than the gain. Reported as a finding and a next step (cap |xᵢ − bᵢ|).
 
 ### 8. Backtest inputs to the optimizer
 - **Who:** Assia
 - **Requirement:** the optimizer now depends on the previous portfolio, so the backtest must run month by month and pass the **actual pre-trade weights after drift** as `x_prev`.
 - The notebook drifts with month-end to month-end returns. This is an approximation: trades happen on the session after the signal.
 - The first decision (2015-12) starts from the benchmark.
-- **Action:** [ ] implemented in the backtest
+- **Action:** [X] implemented in the backtest (`src/backtest.py`, 14 Nov). The backtest drifts with **daily**
+  returns, so `x_prev` is the exact holding at the month-end close (no month-end approximation).
 
 ---
 
 ## Carried over from `journal_donnees.md` (owner Abraham / Assia)
 
-- [ ] **Execution price:** if trades happen at the close of the first session of month t+1, the new weights miss that session's return (see section 5 of the journal).
-- [ ] **Risk-free rate:** convert DGS1MO to a monthly rate for the metrics. It is not needed by the optimizer, since 1ᵀ(x − b) = 0.
+- [X] **Execution price:** trades happen at the close of the first session of month t+1; that session is earned by the old, drifted weights (see section 5 of the journal). Implemented in `src/backtest.py`.
+- [X] **Risk-free rate:** convert DGS1MO to a monthly rate for the metrics. It is not needed by the optimizer, since 1ᵀ(x − b) = 0.
+  **Decision (14 Nov):** done in `src/metrics.py`: DGS1MO / 252 per session, using the rate published at the previous close, last published value carried over bond-market holidays. Only the Sharpe ratio uses it; active return and IR do not.
 - [ ] **Datastream licence:** keep the repository private until redistribution rights are clear, and remove restricted raw data before submission (plan, 15 November).
+  **Decision (14 Nov):** keep the repo private; remove `data/raw/ETF.xlsx` before submission. Open question for the professor:
+  `data/processed/etf_daily_clean.csv` holds Datastream prices, and the return files are derived from them, yet the app needs them offline.
 
 ---
+
+## Backtest conventions (agreed 14 November, `src/backtest.py`)
+
+| Topic | Decision |
+|---|---|
+| Decision months | 2015-12 → 2026-09, so returns are earned Jan 2016 → Oct 2026 (plan's evaluation period). The 2026-10 decision is only the app's proposed portfolio |
+| Trade timing | Signal at the month-end close, trade at the close of the next session |
+| Turnover cap | Applied to both BL portfolios; first decision starts from the benchmark |
+| Benchmark | Rebalanced monthly to its fixed weights, no costs (reference index) |
+| Costs | 5 bp × Σ\|x_target − w_drifted\|, deducted on the trade day |
+| Outputs | `data/results/`: daily net and gross returns, monthly log (weights, traded, cost, ex-ante TE, relaxed cap) |
+
+Note: `traded` is measured on the trade day, one session after the decision, so it can be slightly above the
+20% cap that the optimizer applies to the month-end holdings.
 
 ## Already decided (for the record)
 
@@ -112,7 +135,7 @@ Tick the box and record the choice once the team has agreed.
 | Confidence → Ω | Ω_k = (1 − c_k)/c_k · P_k τΣ P_kᵀ (Idzorek/Walters) | τ cancels; confidence in (0, 1] |
 | Benchmark SR | 0.4, display only | Cancels out of α with relative views |
 | Solver | scipy SLSQP | Matches the closed form (5e-9) and an independent convex solver on all 131 months × 3 rule sets (weights within 7e-5) |
-| Turnover cap | 20%, two-way (pending item 5) | Plan's optional extra |
+| Turnover cap | 20%, two-way (item 5) | Plan's optional extra |
 
 ## Checks in place
 
