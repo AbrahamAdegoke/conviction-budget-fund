@@ -7,7 +7,8 @@ import pytest
 AppTest = pytest.importorskip("streamlit.testing.v1").AppTest
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = [str(ROOT / p) for p in
-         ["streamlit_app.py", "app/mandate_and_views.py", "app/proposed_portfolio.py", "app/results.py"]]
+         ["streamlit_app.py", "app/the_fund.py", "app/mandate_and_views.py", "app/proposed_portfolio.py",
+          "app/results.py"]]
 
 
 @pytest.mark.parametrize("page", PAGES)
@@ -17,7 +18,7 @@ def test_page_runs(page):
 
 
 def test_manual_view_changes_the_portfolio():
-    at = AppTest.from_file(PAGES[2], default_timeout=120)
+    at = AppTest.from_file(PAGES[3],default_timeout=120)
     at.session_state["use_manual"], at.session_state["mv_q"] = True, 3.0
     at.run()
     effect = at.dataframe[0].value["Effect of manual view"]
