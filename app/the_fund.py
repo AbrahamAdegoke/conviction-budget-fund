@@ -53,8 +53,8 @@ st.divider()
 # How the model works: the four monthly steps, in plain words.
 st.subheader("How the model works, every month")
 steps = [
-    ("1 · Signals", "**Momentum:** within equities and within bonds, last year's winner should keep beating "
-                    "last year's loser.  \n**Trend:** if the S&P 500 is above its 200-day average, equities "
+    ("1 · Signals", "**Momentum:** within equities, within bonds, and between real estate and gold, last "
+                    "year's winner should keep beating last year's loser.  \n**Trend:** if the S&P 500 is above its 200-day average, equities "
                     "should beat bonds; below it, the reverse."),
     ("2 · Black-Litterman", "Start from the returns the market implicitly expects (those that make the "
                             "benchmark the right portfolio), then blend in our views according to our "
@@ -62,8 +62,9 @@ steps = [
     ("3 · Optimizer", f"Pick the weights with the highest expected extra return, with tracking error ≤ "
                       f"{config.TE_TARGET:.0%}, the mandate respected (bonds {config.BOND_MIN:.0%}–"
                       f"{config.BOND_MAX:.0%}, EEM ≤ ⅓ of equities, each ETF ≤ {config.MAX_WEIGHT:.0%}, "
-                      f"each bond ETF within ±{config.BOND_ACTIVE_CAP:.0%} of the benchmark, long-only) "
-                      f"and at most {config.MAX_TURNOVER:.0%} of the portfolio traded."),
+                      f"each bond ETF within ±{config.BOND_ACTIVE_CAP * 100:.0f} points of the benchmark, "
+                      f"long-only) and at most {config.MAX_TURNOVER:.0%} of the portfolio traded. A trade is "
+                      f"made only if its expected gain over {config.COST_HORIZON_MONTHS} months pays its cost."),
     ("4 · Trade and hold", "Signal at the month-end close, trade at the next session, pay 5 bp on what we "
                            "trade, hold for the month, repeat. Tested walk-forward: each decision only "
                            "uses data available at the time."),

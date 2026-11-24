@@ -36,7 +36,7 @@ with right:
 - Bonds between **{config.BOND_MIN:.0%}** and **{config.BOND_MAX:.0%}**
 - EEM ≤ **one third** of equities
 - Each ETF ≤ **{config.MAX_WEIGHT:.0%}**
-- IEF, LQD and TLT within **±{config.BOND_ACTIVE_CAP:.0%}** of their benchmark weight
+- IEF, LQD and TLT within **±{config.BOND_ACTIVE_CAP * 100:.0f} points** of their benchmark weight
 - Ex-ante tracking error ≤ **{config.TE_TARGET:.0%}** a year
 """)
     st.radio("Rules for the proposed portfolio", list(common.RULE_SETS), key="rules_label",
@@ -61,7 +61,9 @@ table = pd.DataFrame({"Signal adds (Q)": views["Q_over_equilibrium"], "Prior spr
                       "Posterior spread": views["posterior_spread"]})
 st.dataframe(table.style.format("{:+.2%}"), width="stretch")
 st.caption("Q is the extra spread the signal adds on top of the spread the benchmark prior already implies "
-           "(equilibrium-relative views, docs/open_decisions.md item 2).")
+           "(equilibrium-relative views, docs/open_decisions.md item 2). The benchmark spread assumes a "
+           f"Sharpe ratio of {config.BENCHMARK_SR:.2f} for the benchmark: it changes the spreads shown here, "
+           "not the portfolio weights.")
 
 st.divider()
 

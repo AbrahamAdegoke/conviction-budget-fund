@@ -25,7 +25,9 @@ MAX_TURNOVER = 0.20             # two-way turnover cap, LN3 definition: sum_i |x
 COV_WINDOW = 252                # trailing regular daily returns for the covariance
 ANNUALIZATION = 252
 DEFAULT_CONFIDENCE = 0.50       # Idzorek confidence of the automatic views
-BENCHMARK_SR = 0.40             # only used to DISPLAY implied returns: it cancels out of alpha
+BENCHMARK_SR = 0.40             # only used to DISPLAY implied returns: it cancels out of alpha, so the weights
+                                # do not depend on it. A cautious long-run assumption for a 50/35/15 portfolio
+                                # (historical: 0.88 on 2009-2015, a bull market; 0.60 on 2016-2026)
 
 # Trading costs
 TRADING_COST_BP = 5.0           # cost on traded notional, in basis points (backtest and optimizer)
