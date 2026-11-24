@@ -11,10 +11,10 @@ Python 3.11+. Run every command from the repository root (otherwise `src` is not
 python -m venv .venv
 # macOS / Linux
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q          # 73 tests
+.venv/bin/python -m pytest -q          # 80 tests
 # Windows (PowerShell)
 .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m pytest -q      # 73 tests
+.venv\Scripts\python -m pytest -q      # 80 tests
 ```
 
 `requirements.txt` gives minimum versions. To reproduce the exact tested setup (Python 3.11.4), install
@@ -73,6 +73,7 @@ Realized TE is somewhat above the 2% ex-ante budget. Full table: `data/results/m
 ```text
 src/
   data.py             data cleaning, returns (Person A)
+  signals.py          momentum and trend signals, calibration of K, Black-Litterman views
   black_litterman.py  covariance, prior, views (Person B)
   optimizer.py        TE-budget optimizer, mandate checks (Person B)
   backtest.py         walk-forward backtest, costs (Person C)

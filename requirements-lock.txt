@@ -1,4 +1,4 @@
-# Exact versions of the direct dependencies with which the 73 tests pass (Python 3.11.4, 24 Nov 2026).
+# Exact versions of the direct dependencies with which the tests pass (Python 3.11.4, 24 Nov 2026).
 # Use this file to reproduce the tested setup; requirements.txt keeps minimum versions only.
 pandas==3.0.3
 numpy==2.4.6

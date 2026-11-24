@@ -24,4 +24,13 @@ ANNUALIZATION = 252
 DEFAULT_CONFIDENCE = 0.50       # Idzorek confidence of the automatic views
 BENCHMARK_SR = 0.40             # only used to DISPLAY implied returns: it cancels out of alpha
 
+# Automatic views (see src/signals.py)
+CALIB_START, CALIB_END = "2009-01", "2015-12"  # calibration window: the test period is never used
+VIEW_CAP = 0.05                 # |Q| <= 5% a year for every automatic view
+CAP_TARGET_SHARE = 0.10         # K is set so that the cap binds for about 10% of views on 2009-2015
+# View size Q = K x signal. Frozen at the 2009-2015 calibration rounded to 2 decimals (0.1598 and 0.3892);
+# tests/test_signals.py checks that these values still match the calibration.
+K_MOM = 0.16
+K_TREND = 0.39
+
 assert set(BENCHMARK) == set(TICKERS) and abs(sum(BENCHMARK.values()) - 1) < 1e-12
