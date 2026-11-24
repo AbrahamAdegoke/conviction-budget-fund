@@ -72,8 +72,9 @@ Tick the box and record the choice once the team has agreed.
 
 ### 6. When the turnover cap makes the problem infeasible
 - **Who:** whole team
-- **Implemented:** the mandate and TE ≤ 2% are hard constraints; the cap is relaxed in ×1.25 steps and flagged in `diag["relaxed_turnover_cap"]`.
-- **Where it happens:** only 2020-03. After the COVID volatility jump, last month's portfolio had an ex-ante TE of 4.9%; with 20% turnover the best reachable TE was 2.25%. The cap was relaxed to 25%.
+- **Implemented:** the mandate and TE ≤ 2% are hard constraints; the cap is relaxed to the smallest feasible value, found by bisection (precision 0.01 percentage point), and flagged in `diag["relaxed_turnover_cap"]`.
+- **Where it happens:** only 2020-03. After the COVID volatility jump, last month's portfolio had an ex-ante TE of 4.9%; with 20% turnover the best reachable TE was 2.25%. In the daily backtest the cap is relaxed to 25.1% (full mandate) and 33.2% (TE budget only).
+- **Update (24 Nov):** the first version relaxed the cap in ×1.25 steps, which overshot the minimum (31.25% and 39.1%, and the optimizer traded 34.3% and 39.8%); the 25% quoted here came from the notebook's monthly approximation. Bisection now keeps the promise "relax only as far as needed". Effect on the 2016–2026 backtest: active return of the full mandate +0.30% → +0.32% a year (IR 0.13 → 0.14); 2009–2015 unchanged (no relaxation).
 - **Alternative:** keep the cap and accept 2.25% TE for that month.
 - **Recommendation:** current rule. The TE budget is the fund's main promise; the cap is an optional extra from the plan.
 - **Decision (14 Nov):** [X] relax the cap (current)  [ ] keep the cap, allow TE > 2%. In the backtest it happens only in 2020-03 (both BL portfolios), flagged in `monthly_log.csv`.

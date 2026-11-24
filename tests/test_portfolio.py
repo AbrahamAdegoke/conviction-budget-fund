@@ -150,3 +150,7 @@ def test_turnover_cap_is_respected_and_relaxed_only_when_needed():
     x, ok, relaxed = propose_weights(alpha, Sigma, "full", x_prev=far, max_turnover=0.05)
     assert ok and relaxed is not None and relaxed > 0.05
     assert check_rules(x, "full") == [] and tracking_error(x, Sigma) <= config.TE_TARGET * (1 + 1e-5)
+    # Relaxed only as far as needed: the cap found is the smallest feasible one, and it is used
+    assert np.abs(x - far).sum() <= relaxed + 1e-6
+    _, ok_below = optimize(alpha, Sigma, "full", config.TE_TARGET, x_prev=far, max_turnover=relaxed - 0.005)
+    assert not ok_below
