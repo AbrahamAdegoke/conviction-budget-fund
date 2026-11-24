@@ -172,3 +172,17 @@ def test_bond_active_cap_is_part_of_the_mandate():
     bonds = config.ASSET_CLASSES["Bonds"]
     assert ok_free and (free[bonds] - BENCH[bonds]).abs().max() > config.BOND_ACTIVE_CAP   # the cap binds
     assert ok and (capped[bonds] - BENCH[bonds]).abs().max() <= config.BOND_ACTIVE_CAP + 1e-6
+
+
+def test_cost_penalty_units_and_effect():
+    assert np.isclose(config.cost_penalty(5, 3), 0.002)        # 5 bp x 12 / 3 = 0.20% a year per unit traded
+    assert config.cost_penalty(5, 0) == 0.0                     # no horizon = the optimizer ignores costs
+    Sigma, alpha = make_sigma(), random_alpha(7)
+    x_prev = BENCH.copy()
+    turnover = lambda x: np.abs(x - x_prev).sum()
+    free, ok_free = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20)
+    cheap, ok_cheap = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20, cost=0.002)
+    dear, ok_dear = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20, cost=10.0)
+    assert ok_free and ok_cheap and ok_dear
+    assert turnover(free) > 0.01 and turnover(cheap) <= turnover(free) + 1e-6
+    assert turnover(dear) < 1e-4                                 # a trade that cannot pay its cost is not made

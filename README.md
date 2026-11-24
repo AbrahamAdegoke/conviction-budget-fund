@@ -47,7 +47,7 @@ To rebuild the backtest results after a change:
 | Mandate | Long-only, fully invested; bonds 25–45%; EEM ≤ ⅓ of equities; each ETF ≤ 40%; IEF, LQD, TLT within ±5 points of their benchmark weight |
 | Views | Monthly: 12–1 momentum (best vs worst ETF in each asset class) and SPY 200-day trend (equities vs bonds). Q is the spread added on top of the benchmark-implied spread; size calibrated on 2009–2015 |
 | Covariance | Ledoit-Wolf (constant-correlation target), trailing 252 daily returns |
-| Optimizer | Maximize BL alpha × active weights s.t. ex-ante TE ≤ 2%, mandate, two-way turnover ≤ 20% (relaxed only if infeasible) |
+| Optimizer | Maximize BL alpha × active weights minus trading costs (5 bp, to be paid back within 3 months) s.t. ex-ante TE ≤ 2%, mandate, two-way turnover ≤ 20% (relaxed only as far as needed if infeasible) |
 | Backtest | Signal at month-end close, trade at the next close, 5 bp on traded notional, daily drift; benchmark rebalanced monthly at no cost |
 | Portfolios | Benchmark · BL with TE budget only (long-only) · BL under full mandate |
 

@@ -107,6 +107,13 @@ Tick the box and record the choice once the team has agreed.
 
 ---
 
+### 9. Trading costs in the optimizer's objective (added 24 Nov)
+- **Issue:** the optimizer ignored costs: it traded even when the expected gain was below the 5 bp cost (cost was about a quarter of the gross active return).
+- **Implemented:** objective = alpha'a − c × 12 / h × Σ|x − x_prev|, with c = 5 bp and h = `COST_HORIZON_MONTHS` (Scherer variables already in the turnover cap). A trade is made only if its expected gain over h months pays its cost.
+- **Choice of h = 3 months, ex ante:** on 2009–2015 the direction of alpha keeps 88% / 62% / 29% / about 0% of its content after 1 / 3 / 6 / 12 months, so a trade earns mostly over its first 3 to 6 months; 3 is the cautious end. Horizons 1, 3, 6, 12 were compared on 2009–2015 only (full mandate IR 0.21 / 0.42 / 0.43 / 0.36, vs 0.30 without).
+- **Result (5 bp, after decisions 6 and 7):** 2009–2015 full mandate IR 0.30 → 0.42, turnover 1.60 → 0.84 a year; 2016–2026 full mandate IR 0.17 → 0.22 (+0.36% → +0.49% a year), turnover 1.86 → 0.99, cost 0.09% → 0.05% a year; TE budget only IR 0.25 → 0.36.
+- **Limit:** alpha is not a calibrated forecast (its size depends on K and on the confidence), so the strength of the penalty depends on that scale.
+
 ## Carried over from `journal_donnees.md` (owner Abraham / Assia)
 
 - [X] **Execution price:** trades happen at the close of the first session of month t+1; that session is earned by the old, drifted weights (see section 5 of the journal). Implemented in `src/backtest.py`.

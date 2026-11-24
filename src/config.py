@@ -29,8 +29,11 @@ BENCHMARK_SR = 0.40             # only used to DISPLAY implied returns: it cance
 
 # Trading costs
 TRADING_COST_BP = 5.0           # cost on traded notional, in basis points (backtest and optimizer)
-COST_HORIZON_MONTHS = None      # months over which the expected gain of a trade must pay its cost;
-                                # None = the optimizer ignores costs (they are only charged in the backtest)
+COST_HORIZON_MONTHS = 3         # months over which the expected gain of a trade must pay its cost
+                                # (None = the optimizer ignores costs). Chosen ex ante: on 2009-2015 the
+                                # direction of alpha keeps 88% / 62% / 29% of its content after 1 / 3 / 6
+                                # months, so a trade earns mostly over its first 3 to 6 months; 3 is the
+                                # cautious end. Penalty = 5 bp x 12 / 3 = 0.20% a year per unit traded.
 
 
 def cost_penalty(cost_bp=None, horizon_months=None):
