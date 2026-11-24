@@ -17,8 +17,8 @@ python -m venv .venv
 .venv\Scripts\python -m pytest -q      # 91 tests (1 skipped if statsmodels is missing)
 ```
 
-`requirements.txt` gives minimum versions. To reproduce the exact tested setup (Python 3.11.4), install
-`requirements-lock.txt` instead.
+`requirements.txt` pins the exact versions with which the tests pass (tested with Python 3.11.4). pandas 3,
+numpy 2.4 and scipy 1.17 need Python 3.11 or later; with an older Python the installation stops.
 
 ## Run
 
