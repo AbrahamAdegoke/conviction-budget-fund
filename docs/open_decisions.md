@@ -46,6 +46,11 @@ Tick the box and record the choice once the team has agreed.
 - **Risk:** a user typing "SPY beats TLT by 2%" will expect a total spread.
 - **Recommendation:** keep it consistent with item 2 and show the prior spread next to the input. It is available in `diag["views"]["prior_spread"]`.
 - **Decision (14 Nov):** [X] agreed: same reading as item 2; the app shows the prior spread next to the input (task 9). To confirm with Mustafa.
+- **Update (24 Nov):** a positive manual view could lower the favoured ETF (2026-10: "SPY beats TLT by +0.5%"
+  lowered SPY) because the automatic views already imply a larger spread. The app now shows the spread implied by
+  the benchmark, the spread after the automatic views, and the threshold to exceed to push further (+1.14% for
+  SPY over TLT in 2026-10). Views held at 100% confidence that overlap (e.g. a manual view on the same pair as an
+  automatic one) now give a clear message instead of a crash.
 
 ### 4. The confidence slider barely moves the portfolio
 - **Who:** Assia (app), whole team (presentation)
