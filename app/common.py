@@ -72,7 +72,7 @@ def pct(x, digits=2):
     return f"{x:.{digits}%}"
 
 
-# --- Look and feel -------------------------------------------------------------------------------
+# Look and feel: the same colours on every page, so a portfolio is recognised at a glance.
 # One colour per portfolio on every chart; benchmark in neutral ink (it is the reference).
 COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834"}
 LABEL_COLORS = {PORTFOLIO_LABELS[k]: v for k, v in COLORS.items()}

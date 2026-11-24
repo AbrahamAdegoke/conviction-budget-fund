@@ -17,7 +17,7 @@ from src.optimizer import BENCH
 common.init_state()
 common.header("Mandate and Views", "What is the fund allowed to hold, and what do the signals say this month?")
 
-# --- Mandate -----------------------------------------------------------------------------------
+# Mandate: the benchmark the fund is measured against, and the rules every portfolio must respect.
 left, right = st.columns([3, 2], gap="large")
 with left:
     st.subheader("Benchmark")
@@ -45,7 +45,8 @@ with right:
 
 st.divider()
 
-# --- Automatic views -----------------------------------------------------------------------------
+# Automatic views: pick a month and a confidence, and see what the signals say and how far
+# they move the expected spreads away from the benchmark's.
 st.subheader("Automatic views")
 c1, c2 = st.columns([1, 2], gap="large")
 c1.selectbox("Decision month (signal at the month-end close)", [str(m) for m in common.months()][::-1],
@@ -64,7 +65,7 @@ st.caption("Q is the extra spread the signal adds on top of the spread the bench
 
 st.divider()
 
-# --- Manual view ---------------------------------------------------------------------------------
+# Manual view: the user can add one relative view (A beats B by q) with its own confidence.
 st.subheader("Manual relative view")
 st.toggle("Add a manual view", key="use_manual")
 if st.session_state.use_manual:

@@ -34,7 +34,8 @@ def random_alpha(seed):
     return np.random.default_rng(seed).normal(0, 0.01, N)
 
 
-# --- Covariance -------------------------------------------------------------
+# Covariance: Ledoit-Wolf is checked against a slow direct implementation and against
+# data whose true correlation is constant; the window must never use later data.
 def brute_force_delta(X):
     """Direct (loop) implementation of the Ledoit-Wolf constant-correlation intensity."""
     T, n = X.shape
@@ -82,7 +83,8 @@ def test_covariance_uses_only_past_regular_returns():
         covariance_at(daily, dates[100])                     # fewer than 252 observations
 
 
-# --- Black-Litterman ----------------------------------------------------------
+# Black-Litterman: the prior must reproduce LN4 Example 4, and the posterior must behave as
+# expected (tau cancels, no extra view gives the prior, full confidence meets the views).
 def test_ln4_example_4_implied_returns():
     s = np.array([0.15, 0.20, 0.25, 0.30])
     C = np.array([[1, .1, .4, .5], [.1, 1, .7, .4], [.4, .7, 1, .8], [.5, .4, .8, 1]])
@@ -105,7 +107,7 @@ def test_posterior_properties():
         bl_posterior(pi, Sigma, P, Q, 0.0)
 
 
-# --- Optimizer ---------------------------------------------------------------
+# Optimizer: closed-form check, mandate rules, TE budget, turnover cap and its relaxation.
 def test_unconstrained_optimizer_matches_closed_form():
     Sigma, alpha = make_sigma(), random_alpha(4)
     Si, one = np.linalg.inv(Sigma), np.ones(N)

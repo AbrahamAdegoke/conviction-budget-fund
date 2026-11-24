@@ -45,7 +45,7 @@ c4.metric("Years ahead of the benchmark", f"{years_up} of {n_years}", border=Tru
 
 st.divider()
 
-# --- How the model works -------------------------------------------------------------------------
+# How the model works: the four monthly steps, in plain words.
 st.subheader("How the model works, every month")
 steps = [
     ("1 · Signals", "**Momentum:** within equities and within bonds, last year's winner should keep beating "
@@ -70,7 +70,7 @@ for col, (title, text) in zip(st.columns(4), steps):
 
 st.divider()
 
-# --- Performance in two charts -------------------------------------------------------------------
+# Performance: return against risk, and the extra return year by year.
 st.subheader("What it delivered")
 left, right = st.columns(2, gap="large")
 with left:
@@ -101,7 +101,7 @@ with right:
 
 st.divider()
 
-# --- Risk-adjusted measures ----------------------------------------------------------------------
+# Risk measures: what each number means, with the fund's and the benchmark's values.
 st.subheader("How to read the risk measures")
 rows = [
     ("Sharpe ratio", "Return above cash per unit of total risk. Is the return worth the risk?", "Sharpe", "{:.2f}"),
@@ -123,7 +123,7 @@ st.dataframe(table, hide_index=True, width="stretch",
 
 st.divider()
 
-# --- Benefits and limits -------------------------------------------------------------------------
+# Benefits and limits: why an investor would choose the fund, and what we do not claim.
 good, limits = st.columns(2, gap="large")
 with good:
     st.subheader("Why choose it")

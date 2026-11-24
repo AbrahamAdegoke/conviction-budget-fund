@@ -20,7 +20,7 @@ st.caption(f"Walk-forward backtest {net.index[0]:%d %b %Y} – {net.index[-1]:%d
            "next-day trading, 5 bp cost on traded notional, automatic views at 50% confidence · "
            "base case: the sliders and the manual view do not change these results.")
 
-# --- Headline metrics ----------------------------------------------------------------------------
+# Headline metrics: did the views add value after costs, and was the risk budget respected?
 full, te_only = metrics.loc["bl_full"], metrics.loc["bl_te_only"]
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Active return, full mandate (net)", common.pct(full["Active return (net)"]), border=True,
@@ -46,7 +46,7 @@ def series_fig(df, title, yfmt, hover_fmt):
     return fig
 
 
-# --- Performance charts --------------------------------------------------------------------------
+# Performance charts: growth, cumulative extra return, drawdowns and tracking error by year.
 tab1, tab2, tab3, tab4 = st.tabs(["Growth of $1", "Cumulative active return", "Drawdown",
                                   "Tracking error by year"])
 with tab1:
@@ -72,7 +72,7 @@ with tab4:
     st.plotly_chart(common.style(fig, "Realized tracking error by calendar year", ".1%", height=420),
                     width="stretch")
 
-# --- Metrics table -------------------------------------------------------------------------------
+# Metrics table: every backtest measure for the three portfolios side by side.
 st.subheader("All metrics")
 ratios = ["Sharpe", "Information ratio", "t-stat active return"]
 key_rows = ["Active return (net)", "Realized TE", "Information ratio"]
@@ -85,7 +85,7 @@ st.dataframe(show.apply(fmt, axis=1).style.apply(
 st.caption("Annualized except drawdowns and ES (daily). Benchmark active metrics are zero by construction (–). "
            "Benchmark turnover is its monthly rebalancing, charged no cost.")
 
-# --- Weights and trading over time ---------------------------------------------------------------
+# Weights and trading: what the fund held at each decision and how much it traded.
 st.divider()
 st.subheader("Weights and trading over time")
 choice = st.radio("Portfolio", ["bl_full", "bl_te_only"], format_func=labels.get, horizontal=True)

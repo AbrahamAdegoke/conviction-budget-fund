@@ -24,7 +24,8 @@ st.caption(f"Decision at the close of {s.month}, traded at the next session · {
 x, diag = common.current_proposal()
 active = x - BENCH
 
-# --- Headline numbers and rule check -------------------------------------------------------------
+# Headline numbers: risk used, expected extra return, how different the portfolio is,
+# and whether every mandate rule holds.
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Ex-ante tracking error", common.pct(diag["te_ex_ante"]), border=True,
           help=f"Budget {config.TE_TARGET:.0%}")
@@ -37,7 +38,7 @@ if diag["fallback_to_benchmark"]:
     st.warning("The optimizer found no portfolio that meets the mandate and the tracking-error budget, "
                "so the fund holds the benchmark this month.")
 
-# --- Weights vs benchmark, and active weights -----------------------------------------------------
+# Weights: the proposed portfolio next to the benchmark, and the over- and underweights.
 classes = {t: c for c, ts in config.ASSET_CLASSES.items() for t in ts}
 xcat = [[classes[t] for t in TICKERS], TICKERS]
 left, right = st.columns([3, 2], gap="large")
@@ -61,7 +62,7 @@ with right:
     fig.update_yaxes(autorange="reversed", gridcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, width="stretch")
 
-# --- Detail table --------------------------------------------------------------------------------
+# Detail table: weights, active weights and alpha per ETF, plus the effect of the manual view.
 table = pd.DataFrame({"Asset class": [classes[t] for t in TICKERS], "Benchmark": BENCH, "Proposed": x,
                       "Active": active, "Alpha (BL)": diag["returns"]["alpha"]})
 if common.manual_view():
@@ -75,7 +76,7 @@ st.dataframe(
               subset=signed),
     width="stretch")
 
-# --- Mandate totals ------------------------------------------------------------------------------
+# Mandate totals: the three portfolio-level limits (bond range, EEM share, largest position).
 eq, bonds = config.ASSET_CLASSES["Equities"], config.ASSET_CLASSES["Bonds"]
 m1, m2, m3 = st.columns(3)
 m1.metric("Bonds", common.pct(x[bonds].sum(), 1), help=f"Range {config.BOND_MIN:.0%}–{config.BOND_MAX:.0%}")
