@@ -53,20 +53,30 @@ To rebuild the backtest results after a change:
 
 All method choices and their evidence: [`docs/open_decisions.md`](docs/open_decisions.md).
 
-## Results (Jan 2016 – Oct 2026, net of costs)
+## Results (Jan 2016 – Oct 2026, net of 5 bp costs)
 
-| | Benchmark | BL, TE budget only | BL, full mandate |
-|---|---|---|---|
-| Return (CAGR) | 8.17% | 8.73% | 8.45% |
-| Active return | – | 0.56% | 0.30% |
-| Realized TE | – | 2.36% | 2.34% |
-| Information ratio | – | 0.24 | 0.13 |
-| Cost per year | – | 0.11% | 0.11% |
-| Max drawdown | 24.2% | 24.1% | 24.2% |
-| 95% ES (daily) | 1.54% | 1.63% | 1.63% |
+| | Benchmark | BL, TE budget only | BL, full mandate | Naive MVO |
+|---|---|---|---|---|
+| Return (CAGR) | 8.17% | 9.02% | 8.64% | 9.07% |
+| Active return | – | 0.83% | 0.49% | 0.86% |
+| Realized TE, daily / monthly | – | 2.29% / 1.99% | 2.18% / 1.84% | 2.35% / 2.02% |
+| Information ratio | – | 0.36 | 0.22 | 0.36 |
+| Jensen's alpha (t, Newey-West) | – | 0.84% (1.41) | 0.44% (0.83) | 0.85% (1.31) |
+| Turnover (two-way, per year) | 0.26 | 1.05 | 0.99 | 1.58 |
+| Cost per year | – | 0.05% | 0.05% | 0.08% |
+| Max drawdown | 24.2% | 23.8% | 24.1% | 23.9% |
+| 95% ES (daily) | 1.54% | 1.64% | 1.65% | 1.61% |
 
-The active return is positive after costs but not statistically significant (t-stat 0.8 and 0.4).
-Realized TE is somewhat above the 2% ex-ante budget. Full table: `data/results/metrics.csv`.
+The active return is positive after costs but not statistically significant (Jensen t-stat 1.4 and 0.8).
+Measured monthly, as the committee looks at the fund, realized TE stays within the 2% budget; measured daily it is
+a little higher because daily active returns partly offset each other within the month.
+Full tables: `data/results/metrics.csv`, `te_by_block.csv` (ex-ante vs realized TE by asset class),
+`variants.csv` (both periods, TE 1/2/3%, costs 0/5/25 bp; `python -m src.variants`) and `frontier.csv`
+(`python -m src.frontier`).
+
+Calibration period 2009–2015 (same model): IR 0.42 for the full mandate, 0.27 for the TE budget only, 0.63 for the
+naive MVO. The price of the rules changes sign between periods (+0.31% a year on 2009–2015, −0.34% on
+2016–2026), and the naive MVO beats Black-Litterman on both.
 
 ## Repository
 
