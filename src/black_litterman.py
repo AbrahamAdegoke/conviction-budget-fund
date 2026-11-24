@@ -18,9 +18,8 @@ from .data import PROCESSED_DIR, TICKERS
 VIEWS_FILE = PROCESSED_DIR / "bl_views.csv"
 
 
-# ---------------------------------------------------------------------------
-# Covariance
-# ---------------------------------------------------------------------------
+# Covariance: estimate how the 8 ETFs move together over the last year, shrunk towards a
+# simpler constant-correlation matrix (Ledoit-Wolf) so the optimizer does not chase noise.
 def ledoit_wolf_cc(X):
     """Ledoit-Wolf shrinkage to the constant-correlation target.
 
@@ -62,9 +61,8 @@ def covariance_at(daily, month_end, window=COV_WINDOW):
     return pd.DataFrame(Sigma * ANNUALIZATION, index=TICKERS, columns=TICKERS), delta, rbar
 
 
-# ---------------------------------------------------------------------------
-# Prior and posterior
-# ---------------------------------------------------------------------------
+# Prior and posterior: start from the returns that make the benchmark the right portfolio
+# (the prior), then tilt them towards our views by an amount set by the confidence (LN4).
 def implied_excess_returns(Sigma, b, sr):
     """LN4 implied risk premia: pi = phi * Sigma b with phi = sr / sigma(b). Returns (pi, phi, sigma_b)."""
     Sigma, b = np.asarray(Sigma, float), np.asarray(b, float)
@@ -92,9 +90,8 @@ def bl_alpha(Sigma, P, Q, conf):
     return bl_posterior(np.zeros(n), Sigma, P, Q, conf)
 
 
-# ---------------------------------------------------------------------------
-# Views
-# ---------------------------------------------------------------------------
+# Views: read the monthly automatic views, turn them into the P and Q matrices of LN4, and
+# optionally add one manual view chosen in the app.
 def load_views(path=VIEWS_FILE):
     """Automatic views exported by the data notebook (one set of rows per decision month)."""
     views = pd.read_csv(path)

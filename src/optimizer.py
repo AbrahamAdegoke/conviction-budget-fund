@@ -26,9 +26,8 @@ EQUITY, BONDS = config.ASSET_CLASSES["Equities"], config.ASSET_CLASSES["Bonds"]
 RULES = ("full", "long_only", "none")
 
 
-# ---------------------------------------------------------------------------
-# Mandate
-# ---------------------------------------------------------------------------
+# Mandate: write the fund's rules (long-only, bond range, EEM share of equities, 40% cap per ETF)
+# as linear constraints G x <= h, and check a portfolio against them.
 def linear_rules(rules):
     """Mandate as G x <= h."""
     if rules not in RULES:
@@ -70,9 +69,8 @@ def tracking_error(x, Sigma, b=BENCH):
     return float(np.sqrt(a @ np.asarray(Sigma, float) @ a))
 
 
-# ---------------------------------------------------------------------------
-# Optimizer
-# ---------------------------------------------------------------------------
+# Optimizer: pick the weights with the highest expected extra return while keeping tracking
+# error within budget, the mandate respected and turnover capped (the sigma-problem of LN2).
 def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=None, max_turnover=None):
     """Solve the sigma-problem; returns (weights Series, feasible flag)."""
     n = len(TICKERS)
@@ -133,9 +131,8 @@ def propose_weights(alpha, Sigma, rules="full", x_prev=None, max_turnover=config
     return x, ok, relaxed
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+# Entry point: one call that gives the proposed portfolio for a month. The backtest and the
+# app both use it, so they always run the same model.
 @dataclass
 class Inputs:
     daily: pd.DataFrame       # daily returns + 'regular' flag

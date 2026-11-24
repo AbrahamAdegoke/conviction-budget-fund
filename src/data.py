@@ -38,9 +38,8 @@ TICKER_KEYWORDS = {
 TICKERS = list(TICKER_KEYWORDS)
 
 
-# ---------------------------------------------------------------------------
-# Loading
-# ---------------------------------------------------------------------------
+# Loading: read the raw Datastream workbook and the FRED risk-free rate. Problems found
+# (bad dates, duplicates, non-numeric cells) are counted and reported, never silently fixed.
 def map_columns_to_tickers(columns):
     """Map Datastream column names to tickers; fail on ambiguous or missing ETFs."""
     mapping = {}
@@ -91,9 +90,8 @@ def load_risk_free(path=RF_FILE):
     return rf.dropna(subset=["Date"]).set_index("Date").sort_index()["DGS1MO"]
 
 
-# ---------------------------------------------------------------------------
-# Calendar
-# ---------------------------------------------------------------------------
+# Calendar: the official NYSE calendar decides which dates are real trading days, so holiday
+# rows copied from the previous day are dropped instead of creating fake zero returns.
 def nyse_sessions(start, end):
     """Official NYSE trading sessions between two dates (inclusive)."""
     schedule = mcal.get_calendar("NYSE").schedule(start_date=start, end_date=end)
@@ -108,9 +106,8 @@ def keep_sessions(df, sessions):
     return df.loc[df.index.isin(sessions)].copy(), non_sessions, missing_sessions
 
 
-# ---------------------------------------------------------------------------
-# Quality checks (detection only, never automatic deletion)
-# ---------------------------------------------------------------------------
+# Quality checks: these functions only flag suspicious data (long runs of zero returns, very large
+# moves). Nothing is deleted automatically; every decision is logged in the quality report.
 def zero_runs(series, min_len):
     """Runs of at least min_len consecutive zero returns: list of (start date, length)."""
     z = series.eq(0)
@@ -123,9 +120,8 @@ def extreme_returns(returns, threshold=0.15):
     return {t: returns[t][returns[t].abs() > threshold] for t in returns.columns}
 
 
-# ---------------------------------------------------------------------------
-# Returns
-# ---------------------------------------------------------------------------
+# Returns: simple daily and monthly returns from the Total Return Index (dividends included),
+# without filling missing prices. compounded_monthly checks that both frequencies agree.
 def daily_returns(ri, sessions):
     """Simple daily returns from RI, without filling, with a 'regular' flag.
 
@@ -180,9 +176,8 @@ def compounded_monthly(daily):
     return compounded.where(complete)
 
 
-# ---------------------------------------------------------------------------
-# Full pipeline
-# ---------------------------------------------------------------------------
+# Full pipeline: one call that turns the raw workbook into clean prices and returns. The data
+# notebook (01) uses it to write the files in data/processed/.
 def build_clean_dataset(path=ETF_FILE):
     """Load both sheets, keep NYSE sessions and build daily and monthly returns.
 
@@ -229,6 +224,8 @@ def build_clean_dataset(path=ETF_FILE):
     }
 
 
+# Processed files: the backtest and the app read the saved CSV files, so they run without
+# the raw data.
 def load_processed():
     """Read the exported clean files (for the backtest and the app)."""
     daily = pd.read_csv(PROCESSED_DIR / "etf_daily_returns.csv", index_col="Date", parse_dates=True)
