@@ -31,6 +31,7 @@ One message throughout: **a disciplined use of a small, controlled active-risk b
 Where to read more: `docs/open_decisions.md` (item number in brackets).
 
 **Model**
+- *Why this benchmark?* It is the client's mandate (a balanced 50% equities / 35% bonds / 15% real estate and gold); we take it as given and measure the value added against it. It also sets the prior: π = φΣb.
 - *Why "views on top of equilibrium"?* It is LN4 with Q = Pμ̃ + κ·signal. Read as total returns, the trend view pushed against its own signal in 52% of months; on top of equilibrium, in 11% [2].
 - *Where is τ?* Ω is proportional to τ (Idzorek confidence, Walters form), so τ cancels. We hit the TE budget with the LN2 sigma-problem, not by tuning τ as in the LN4 lab.
 - *γ-problem or σ-problem?* Same weights when the budget binds (checked to 2e-7); we solve the σ version.
