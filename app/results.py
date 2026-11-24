@@ -25,10 +25,12 @@ full, te_only = metrics.loc["bl_full"], metrics.loc["bl_te_only"]
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Active return, full mandate (net)", common.pct(full["Active return (net)"]), border=True,
           delta=f"TE budget only: {te_only['Active return (net)']:+.2%}", delta_color="off")
-c2.metric("Realized tracking error", common.pct(full["Realized TE"]), border=True,
-          delta=f"Ex-ante budget {config.TE_TARGET:.0%}", delta_color="off")
+c2.metric("Realized tracking error, monthly", common.pct(full["Realized TE (monthly)"]), border=True,
+          delta=f"Budget {config.TE_TARGET:.0%} · daily {common.pct(full['Realized TE'])}", delta_color="off",
+          help="Measured on monthly returns, the horizon at which the fund is reviewed. Measured on daily returns "
+               "it is a little higher, because daily differences partly cancel within a month.")
 c3.metric("Information ratio", f"{full['Information ratio']:.2f}", border=True,
-          delta=f"t-stat {full['t-stat active return']:.2f}", delta_color="off")
+          delta=f"Jensen alpha t-stat {full['t-stat Jensen alpha (Newey-West)']:.2f}", delta_color="off")
 c4.metric("Cost per year", common.pct(full["Cost (per year)"]), border=True,
           delta=f"Turnover {full['Turnover (two-way, per year)']:.0%} a year", delta_color="off")
 
@@ -71,6 +73,25 @@ with tab4:
     fig.update_layout(barmode="group", bargap=0.3, bargroupgap=0.08)
     st.plotly_chart(common.style(fig, "Realized tracking error by calendar year", ".1%", height=420),
                     width="stretch")
+    st.caption("Measured on daily returns. Year by year it can exceed the budget, mostly in stress years.")
+
+# Tracking error by asset block: where the risk model is right, and where it underestimates the risk.
+blocks, variants = common.extra_results()
+b = blocks.loc["bl_full"].drop(index="Total")
+with st.expander("Why can realized tracking error exceed the 2% budget?"):
+    st.markdown(
+        f"Month by month the fund stays within budget ({common.pct(full['Realized TE (monthly)'])}). Day by day it "
+        f"is a little higher ({common.pct(full['Realized TE'])}). The table splits the active risk by asset block: "
+        f"a ratio above 1 means the covariance underestimated that block's risk. Bonds are no longer "
+        f"underestimated thanks to the ±{config.BOND_ACTIVE_CAP:.0%} limit on IEF, LQD and TLT "
+        f"(without it, in the TE-budget-only portfolio: {blocks.loc[('bl_te_only', 'Bonds'), 'Realized / ex-ante']:.2f}); "
+        f"the real-estate vs gold bets still are.")
+    st.dataframe(pd.DataFrame({
+        "Ex-ante TE": b["Ex-ante TE"].map(lambda v: f"{v:.2%}"),
+        "Realized TE": b["Realized TE"].map(lambda v: f"{v:.2%}"),
+        "Realized ÷ ex-ante": b["Realized / ex-ante"].map(lambda v: f"{v:.2f}"),
+        "Share of active risk": b["Share of realized active variance"].map(lambda v: f"{v:.0%}")}),
+        width="stretch")
 
 # Metrics table: every backtest measure for the three portfolios side by side.
 st.subheader("All metrics")

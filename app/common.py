@@ -62,6 +62,14 @@ def current_proposal(with_manual=True):
 
 
 @st.cache_data
+def extra_results():
+    """Ex-ante vs realized TE by asset block (src.metrics) and backtest variants on both periods (src.variants)."""
+    blocks = pd.read_csv(RESULTS_DIR / "te_by_block.csv", index_col=[0, 1])
+    variants = pd.read_csv(RESULTS_DIR / "variants.csv")
+    return blocks, variants
+
+
+@st.cache_data
 def results():
     net, gross, log = load_results()
     metrics = pd.read_csv(RESULTS_DIR / "metrics.csv", index_col="portfolio")

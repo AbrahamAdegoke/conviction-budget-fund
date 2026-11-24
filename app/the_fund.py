@@ -26,6 +26,11 @@ years_up, n_years = int((active_by_year > 0).sum()), len(active_by_year)
 full_log = log.loc[log["portfolio"] == "bl_full"]
 n_violations = int(full_log["violations"].notna().sum())                      # empty = no violation
 n_relaxed = int(full_log["relaxed_turnover_cap"].notna().sum())
+blocks, variants = common.extra_results()
+alt_ratio = blocks.loc[("bl_full", "Alternatives"), "Realized / ex-ante"]
+base = variants[(variants["TE budget"] == config.TE_TARGET) & (variants["cost (bp)"] == config.TRADING_COST_BP)]
+base = base.set_index(["period", "strategy"])["Active return (net)"]
+rules_price = {p: base[(p, "bl_full")] - base[(p, "bl_te_only")] for p in ["2009-2015", "2016-2026"]}
 
 st.markdown(f"#### Benchmark-like risk, plus a disciplined and fully controlled source of extra return.")
 st.markdown(
@@ -132,8 +137,9 @@ with good:
   {te_only['Active return (net)']:+.2%} with the TE budget only.
 - **Same crash risk:** max drawdown {common.pct(full['Max drawdown'], 1)} vs {common.pct(bench['Max drawdown'], 1)},
   volatility {common.pct(full['Volatility'], 1)} vs {common.pct(bench['Volatility'], 1)}.
-- **Rules always respected:** {n_violations} mandate violations in {len(full_log)} monthly decisions; the turnover
-  cap was loosened in only {n_relaxed} month{'s' if n_relaxed != 1 else ''}, to keep tracking error within budget.
+- **Rules always respected:** {n_violations} mandate violations in {len(full_log)} monthly decisions; {
+  "the turnover cap never had to be loosened" if n_relaxed == 0 else
+  f"the turnover cap was loosened in only {n_relaxed} month{'s' if n_relaxed != 1 else ''}"}.
 - **Cheap:** {common.pct(full['Cost (per year)'])} a year of trading costs; most of the gross edge
   ({full['Active return (gross)']:+.2%}) survives.
 - **Transparent and systematic:** every position comes from a view you can explain, with no discretionary
@@ -144,12 +150,18 @@ with good:
 with limits:
     st.subheader("What we do not claim")
     st.markdown(f"""
-- **The edge is small and not statistically proven:** t-stat {full['t-stat active return']:.2f}
-  (about 2 would be needed). {n_years} years are not enough to prove skill.
-- **Realized tracking error ({common.pct(full['Realized TE'])}) is above the {config.TE_TARGET:.0%} target:** a risk
-  model based on the past year underestimates sudden crises such as March 2020.
-- **The mandate has a price:** the TE-budget-only version earns more
-  ({te_only['Active return (net)']:+.2%} vs {full['Active return (net)']:+.2%}).
+- **The edge is small and not statistically proven:** Jensen alpha t-stat
+  {full['t-stat Jensen alpha (Newey-West)']:.2f} (about 2 would be needed). {n_years} years are not enough to prove skill.
+- **Tracking error:** {common.pct(full['Realized TE (monthly)'])} measured month by month, within the
+  {config.TE_TARGET:.0%} budget, but {common.pct(full['Realized TE'])} day by day. The risk model still underestimates
+  the real-estate vs gold bets (realized risk {alt_ratio:.2f}× the forecast).
+- **The mandate's price depends on the period:** {rules_price['2016-2026']:+.2%} a year vs the TE-budget-only
+  version on 2016–2026, but {rules_price['2009-2015']:+.2%} on 2009–2015. The rules protect in some markets only.
+- **A simpler model did as well:** a naive mean-variance on past-year returns earned
+  {metrics.loc['mvo_naive', 'Active return (net)']:+.2%} a year (information ratio
+  {metrics.loc['mvo_naive', 'Information ratio']:.2f} vs {full['Information ratio']:.2f}), but trading more
+  ({metrics.loc['mvo_naive', 'Turnover (two-way, per year)']:.0%} vs {full['Turnover (two-way, per year)']:.0%} of the
+  portfolio a year). Black-Litterman's value here is control and explainability, not extra return.
 
 The model does not promise large returns. It promises a **disciplined use of a small, controlled risk budget**.
 """)
