@@ -137,6 +137,9 @@ Tick the box and record the choice once the team has agreed.
 - [ ] **Datastream licence:** keep the repository private until redistribution rights are clear, and remove restricted raw data before submission (plan, 15 November).
   **Decision (14 Nov):** keep the repo private; remove `data/raw/ETF.xlsx` before submission. Open question for the professor:
   `data/processed/etf_daily_clean.csv` holds Datastream prices, and the return files are derived from them, yet the app needs them offline.
+  **Update (24 Nov):** `data/raw/ETF.xlsx` is no longer tracked (`.gitignore`); the tests, backtest and app run without
+  it. Still to do by the repository owner: make the GitHub repository private (it is public) and, if needed, remove
+  the file from the Git history. The app will be deployed for invited viewers only. No question to the professor.
 
 ---
 

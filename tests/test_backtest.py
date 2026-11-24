@@ -89,3 +89,13 @@ def test_naive_mvo_alpha_has_no_look_ahead(inputs):
     later = shocked.index > month_end
     shocked.loc[later, TICKERS] = shocked.loc[later, TICKERS] * 50
     assert np.allclose(naive_alpha(shocked, month_end), before)
+
+
+def test_propose_portfolio_on_a_real_month(inputs):
+    from src import config
+    from src.optimizer import propose_portfolio, tracking_error
+    x, diag = propose_portfolio("2026-10", inputs, x_prev=BENCH, rules="full")
+    assert diag["ok"] and not diag["fallback_to_benchmark"] and diag["violations"] == []
+    assert np.isclose(x.sum(), 1.0) and (x >= -1e-9).all()
+    assert tracking_error(x, diag["Sigma"]) <= config.TE_TARGET * (1 + 1e-5)
+    assert np.abs(x - BENCH).sum() <= config.MAX_TURNOVER + 1e-6
