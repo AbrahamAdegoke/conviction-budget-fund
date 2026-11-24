@@ -80,8 +80,14 @@ if st.session_state.use_manual:
         if s.mv_long == s.mv_short:
             st.error("Choose two different ETFs: the manual view is ignored until then.")
         else:
-            prior = diag["returns"]["prior_pi"]
-            gap = prior[s.mv_long] - prior[s.mv_short]
-            st.info(f"The prior already expects **{s.mv_long}** to beat **{s.mv_short}** by {common.pct(gap)} "
-                    f"a year. Your view adds {s.mv_q:+.1f}%, so the total view is {common.pct(gap + s.mv_q / 100)}.")
+            prior, post = diag["returns"]["prior_pi"], diag["returns"]["posterior_mu"]
+            gap = prior[s.mv_long] - prior[s.mv_short]                 # what the benchmark implies
+            implied = post[s.mv_long] - post[s.mv_short]               # after the automatic views
+            total = gap + s.mv_q / 100
+            direction = ("adds conviction in" if total > implied + 1e-6 else
+                         "works against" if total < implied - 1e-6 else "leaves unchanged")
+            st.info(f"The benchmark implies that **{s.mv_long}** beats **{s.mv_short}** by {common.pct(gap)} a "
+                    f"year, and the automatic views already raise this to **{common.pct(implied)}**. Your view sets "
+                    f"it at {common.pct(total)}, so it **{direction}** {s.mv_long} over {s.mv_short}. To push further "
+                    f"towards {s.mv_long}, enter more than {(implied - gap) * 100:+.1f}%.")
             st.caption("Open **Proposed Portfolio** to see its effect.")
