@@ -89,6 +89,13 @@ Tick the box and record the choice once the team has agreed.
   (rough estimate: monthly returns × target weights, before costs).
 - **Decision (14 Nov):** [X] no change  [ ] add active-weight cap. The decision rule is technically triggered but the effect is small,
   and changing the optimizer on code-freeze day is riskier than the gain. Reported as a finding and a next step (cap |xᵢ − bᵢ|).
+- **Update (24 Nov): cap adopted, |xᵢ − bᵢ| ≤ 5 points on IEF, LQD and TLT only** (full mandate; `BOND_ACTIVE_CAP` in `src/config.py`).
+  Why: the 0.86 correlation makes bond swaps look cheap in tracking error, but this is where the covariance is least reliable.
+  Realized vs ex-ante TE of the bond positions is about 1.25–1.40 (equities about 1.0): the model understates their risk.
+  Evidence on the calibration period 2009–2015 (full mandate, 5 bp): IR 0.15 → 0.30, active return +0.30% → +0.59% a year,
+  turnover 1.94 → 1.60 a year. Test period 2016–2026: IR 0.14 → 0.17, +0.32% → +0.36% a year, realized TE 2.34% → 2.15%
+  (daily) and 2.02% → 1.77% (monthly). A 10-point cap on every ETF, the other variant tried, was worse on both periods.
+  Only 5 points was used; no other value was tried on 2016–2026.
 
 ### 8. Backtest inputs to the optimizer
 - **Who:** Assia

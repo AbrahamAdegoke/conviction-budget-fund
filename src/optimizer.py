@@ -45,6 +45,9 @@ def linear_rules(rules):
         G += list(eye); h += [config.MAX_WEIGHT] * n
         G += [-ind(BONDS), ind(BONDS)]; h += [-config.BOND_MIN, config.BOND_MAX]
         G += [ind(["EEM"]) - config.EEM_MAX_SHARE_OF_EQUITY * ind(EQUITY)]; h += [0.0]
+        for t in BONDS:                                      # |x_t - b_t| <= BOND_ACTIVE_CAP
+            G += [ind([t]), -ind([t])]
+            h += [BENCH[t] + config.BOND_ACTIVE_CAP, -(BENCH[t] - config.BOND_ACTIVE_CAP)]
     if not G:
         return np.zeros((0, n)), np.zeros(0)
     return np.array(G), np.array(h)
@@ -65,6 +68,8 @@ def check_rules(x, rules="full", tol=1e-6):
             bad.append("bonds outside 25-45%")
         if x["EEM"] > config.EEM_MAX_SHARE_OF_EQUITY * x[EQUITY].sum() + tol:
             bad.append("EEM > 1/3 equity")
+        if ((x[BONDS] - BENCH[BONDS]).abs() > config.BOND_ACTIVE_CAP + tol).any():
+            bad.append("bond ETF more than 5 points from benchmark")
     return bad
 
 

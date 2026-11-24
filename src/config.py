@@ -15,6 +15,9 @@ ASSET_CLASSES = {
 MAX_WEIGHT = 0.40               # each ETF <= 40%
 BOND_MIN, BOND_MAX = 0.25, 0.45  # bonds between 25% and 45%
 EEM_MAX_SHARE_OF_EQUITY = 1 / 3  # EEM <= one third of equities
+BOND_ACTIVE_CAP = 0.05          # IEF, LQD, TLT within +/-5 points of their benchmark weight (decision 7):
+                                # these bonds are ~0.86 correlated, so the covariance understates the risk
+                                # of swapping one for another and the optimizer over-trades them
 
 # Method
 TE_TARGET = 0.02                # annualized ex-ante tracking-error budget

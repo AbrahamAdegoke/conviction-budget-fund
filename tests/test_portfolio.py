@@ -154,3 +154,19 @@ def test_turnover_cap_is_respected_and_relaxed_only_when_needed():
     assert np.abs(x - far).sum() <= relaxed + 1e-6
     _, ok_below = optimize(alpha, Sigma, "full", config.TE_TARGET, x_prev=far, max_turnover=relaxed - 0.005)
     assert not ok_below
+
+
+def test_bond_active_cap_is_part_of_the_mandate():
+    x = BENCH.copy()
+    x["IEF"] += 0.06
+    x["SPY"] -= 0.06
+    assert "bond ETF more than 5 points from benchmark" in check_rules(x, "full")
+    assert check_rules(x, "long_only") == []                   # not a rule of the TE-only portfolio
+    alpha = np.zeros(N)
+    alpha[TICKERS.index("TLT")], alpha[TICKERS.index("IEF")] = 0.02, -0.02   # push a large bond swap
+    Sigma = make_sigma()
+    free, ok_free = optimize(alpha, Sigma, "long_only")
+    capped, ok = optimize(alpha, Sigma, "full")
+    bonds = config.ASSET_CLASSES["Bonds"]
+    assert ok_free and (free[bonds] - BENCH[bonds]).abs().max() > config.BOND_ACTIVE_CAP   # the cap binds
+    assert ok and (capped[bonds] - BENCH[bonds]).abs().max() <= config.BOND_ACTIVE_CAP + 1e-6

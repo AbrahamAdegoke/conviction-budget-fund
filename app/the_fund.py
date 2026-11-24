@@ -57,7 +57,8 @@ steps = [
     ("3 · Optimizer", f"Pick the weights with the highest expected extra return, with tracking error ≤ "
                       f"{config.TE_TARGET:.0%}, the mandate respected (bonds {config.BOND_MIN:.0%}–"
                       f"{config.BOND_MAX:.0%}, EEM ≤ ⅓ of equities, each ETF ≤ {config.MAX_WEIGHT:.0%}, "
-                      f"long-only) and at most {config.MAX_TURNOVER:.0%} of the portfolio traded."),
+                      f"each bond ETF within ±{config.BOND_ACTIVE_CAP:.0%} of the benchmark, long-only) "
+                      f"and at most {config.MAX_TURNOVER:.0%} of the portfolio traded."),
     ("4 · Trade and hold", "Signal at the month-end close, trade at the next session, pay 5 bp on what we "
                            "trade, hold for the month, repeat. Tested walk-forward: each decision only "
                            "uses data available at the time."),

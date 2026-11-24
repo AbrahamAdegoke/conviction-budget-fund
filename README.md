@@ -44,7 +44,7 @@ To rebuild the backtest results after a change:
 | Item | Setting |
 |---|---|
 | Benchmark | SPY 30%, EFA 12%, EEM 8%, IEF 15%, LQD 10%, TLT 10%, VNQ 8%, GLD 7% |
-| Mandate | Long-only, fully invested; bonds 25–45%; EEM ≤ ⅓ of equities; each ETF ≤ 40% |
+| Mandate | Long-only, fully invested; bonds 25–45%; EEM ≤ ⅓ of equities; each ETF ≤ 40%; IEF, LQD, TLT within ±5 points of their benchmark weight |
 | Views | Monthly: 12–1 momentum (best vs worst ETF in each asset class) and SPY 200-day trend (equities vs bonds). Q is the spread added on top of the benchmark-implied spread; size calibrated on 2009–2015 |
 | Covariance | Ledoit-Wolf (constant-correlation target), trailing 252 daily returns |
 | Optimizer | Maximize BL alpha × active weights s.t. ex-ante TE ≤ 2%, mandate, two-way turnover ≤ 20% (relaxed only if infeasible) |

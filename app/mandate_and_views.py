@@ -36,10 +36,12 @@ with right:
 - Bonds between **{config.BOND_MIN:.0%}** and **{config.BOND_MAX:.0%}**
 - EEM ≤ **one third** of equities
 - Each ETF ≤ **{config.MAX_WEIGHT:.0%}**
+- IEF, LQD and TLT within **±{config.BOND_ACTIVE_CAP:.0%}** of their benchmark weight
 - Ex-ante tracking error ≤ **{config.TE_TARGET:.0%}** a year
 """)
     st.radio("Rules for the proposed portfolio", list(common.RULE_SETS), key="rules_label",
-             help="'TE budget only' drops the bond range, the EEM rule and the 40% cap, keeping long-only.")
+             help="'TE budget only' drops the bond range, the EEM rule, the 40% cap and the bond limits, "
+                  "keeping long-only.")
 
 st.divider()
 
