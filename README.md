@@ -71,8 +71,7 @@ The active return is positive after costs but not statistically significant (Jen
 Measured monthly, as the committee looks at the fund, realized TE stays within the 2% budget; measured daily it is
 a little higher because daily active returns partly offset each other within the month.
 Full tables: `data/results/metrics.csv`, `te_by_block.csv` (ex-ante vs realized TE by asset class),
-`variants.csv` (both periods, TE 1/2/3%, costs 0/5/25 bp; `python -m src.variants`) and `frontier.csv`
-(`python -m src.frontier`).
+and `variants.csv` (both periods; TE 1% or 3%, costs 0 or 25 bp, one at a time; `python -m src.variants`).
 
 Calibration period 2009–2015 (same model): IR 0.42 for the full mandate, 0.27 for the TE budget only, 0.63 for the
 naive MVO. The price of the rules changes sign between periods (+0.31% a year on 2009–2015, −0.34% on
