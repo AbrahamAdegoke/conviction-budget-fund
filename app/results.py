@@ -74,7 +74,8 @@ with tab4:
 
 # Metrics table: every backtest measure for the three portfolios side by side.
 st.subheader("All metrics")
-ratios = ["Sharpe", "Information ratio", "t-stat active return"]
+ratios = ["Sharpe", "Information ratio", "t-stat active return", "Jensen beta",
+          "t-stat Jensen alpha (Newey-West)"]
 key_rows = ["Active return (net)", "Realized TE", "Information ratio"]
 show = metrics.T[["benchmark", "bl_te_only", "bl_full"]].rename(columns=labels)
 fmt = lambda row: row.map(lambda v: "–" if pd.isna(v) or (v == 0 and row.name != "Return (CAGR)") else

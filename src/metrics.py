@@ -7,6 +7,9 @@ Conventions:
 - Risk-free: FRED DGS1MO (annual %), last published value carried over bond-market holidays, applied to the
   next session as yield / 252. Only the Sharpe ratio uses it: active return and IR do not need it.
 - 95% ES: historical, average of the worst 5% daily returns, reported as a positive loss.
+- Realized TE is given on daily returns (x sqrt 252) and on monthly returns (x sqrt 12): daily active returns
+  are slightly negatively autocorrelated, so the two differ; the committee looks at the fund monthly.
+- Jensen's alpha (LN2): monthly OLS of R(x) - r on R(b) - r, t-stat with Newey-West standard errors.
 """
 
 import numpy as np
@@ -41,14 +44,49 @@ def expected_shortfall(r, level=ES_LEVEL):
     return float(-r[r <= r.quantile(1 - level)].mean())
 
 
+def monthly(r):
+    """Compound daily returns into calendar-month returns."""
+    return (1 + r).groupby(r.index.to_period("M")).prod() - 1
+
+
+def newey_west_lags(n):
+    """Usual automatic lag length floor(4 (n/100)^(2/9))."""
+    return int(np.floor(4 * (n / 100) ** (2 / 9)))
+
+
+def jensen(port_excess, bench_excess, lags=None):
+    """OLS port_excess = alpha + beta bench_excess + e, with Newey-West (Bartlett) standard errors.
+
+    Returns (alpha, beta, t-stat of alpha), alpha per period of the inputs.
+    """
+    y = np.asarray(port_excess, float)
+    X = np.column_stack([np.ones(len(y)), np.asarray(bench_excess, float)])
+    n = len(y)
+    lags = newey_west_lags(n) if lags is None else lags
+    XtX_inv = np.linalg.inv(X.T @ X)
+    coef = XtX_inv @ X.T @ y
+    u = y - X @ coef
+    Xu = X * u[:, None]
+    S = Xu.T @ Xu
+    for lag in range(1, lags + 1):
+        w = 1 - lag / (lags + 1)
+        G = Xu[lag:].T @ Xu[:-lag]
+        S += w * (G + G.T)
+    cov = XtX_inv @ S @ XtX_inv
+    return float(coef[0]), float(coef[1]), float(coef[0] / np.sqrt(cov[0, 0]))
+
+
 def summary(net, gross, log, benchmark="benchmark"):
     """One row per portfolio with the plan's metrics (all annualized except ES and drawdowns)."""
     rf = risk_free_daily(net.index)
     years = len(net) / A
+    rf_m, bench_m = monthly(rf), monthly(net[benchmark])
     rows = {}
     for p in net.columns:
         r, active = net[p], net[p] - net[benchmark]
         te = active.std() * np.sqrt(A)
+        port_m = monthly(r)
+        alpha, beta, t_alpha = jensen(port_m - rf_m, bench_m - rf_m) if te > 0 else (np.nan, 1.0, np.nan)
         trades = log.loc[log["portfolio"] == p]
         rows[p] = {
             "Return (CAGR)": cagr(r),
@@ -58,8 +96,12 @@ def summary(net, gross, log, benchmark="benchmark"):
             "Active return (gross)": (gross[p] - gross[benchmark]).mean() * A,
             "Active CAGR": cagr(r) - cagr(net[benchmark]),
             "Realized TE": te,
+            "Realized TE (monthly)": (port_m - bench_m).std() * np.sqrt(12),
             "Information ratio": active.mean() * A / te if te > 0 else np.nan,
             "t-stat active return": active.mean() / active.std() * np.sqrt(len(active)) if te > 0 else np.nan,
+            "Jensen alpha (annualized)": alpha * 12,
+            "Jensen beta": beta,
+            "t-stat Jensen alpha (Newey-West)": t_alpha,
             "Turnover (two-way, per year)": trades["traded"].sum() / years,
             "Cost (per year)": trades["cost"].sum() / years,
             "Max drawdown": max_drawdown(r),

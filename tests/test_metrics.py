@@ -52,3 +52,25 @@ def test_summary_definitions(toy):
     assert np.isclose(t.loc["port", "Active return (gross)"] - t.loc["port", "Active return (net)"], 5e-5 * 252)
     assert np.isclose(t.loc["port", "Cost (per year)"], 5e-4)  # one year of data
     assert t.loc["benchmark", "Realized TE"] == 0 and np.isnan(t.loc["benchmark", "Information ratio"])
+
+
+def test_jensen_recovers_known_alpha_and_beta():
+    from src.metrics import jensen
+    rng = np.random.default_rng(1)
+    b = rng.normal(0.005, 0.04, 200)
+    alpha, beta, t = jensen(0.001 + 1.2 * b, b)                 # no noise: exact fit
+    assert np.isclose(alpha, 0.001) and np.isclose(beta, 1.2)
+
+
+def test_jensen_newey_west_matches_statsmodels():
+    sm = pytest.importorskip("statsmodels.api", exc_type=ImportError)   # skipped if missing or broken
+    from src.metrics import jensen, newey_west_lags
+    rng = np.random.default_rng(2)
+    b = rng.normal(0.005, 0.04, 130)
+    e = np.convolve(rng.normal(0, 0.005, 131), [1, -0.3], mode="valid")   # autocorrelated residuals
+    y = 0.001 + 0.9 * b + e
+    alpha, beta, t = jensen(y, b)
+    fit = sm.OLS(y, sm.add_constant(b)).fit(cov_type="HAC", cov_kwds={"maxlags": newey_west_lags(130),
+                                                                     "use_correction": False})
+    assert np.isclose(alpha, fit.params[0]) and np.isclose(beta, fit.params[1])
+    assert np.isclose(t, fit.tvalues[0], rtol=1e-6)
