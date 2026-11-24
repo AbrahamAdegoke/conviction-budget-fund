@@ -5,7 +5,8 @@ Problem (LN2 sigma-problem, active weights a = x - b):
     s.t. 1'x = 1,  a' Sigma a <= TE^2,  mandate rules (G x <= h),
          optional LN3 turnover cap sum|x - x_prev| <= cap (Scherer split x = x_prev + u+ - u-).
 Priority when infeasible: mandate and TE are hard; the turnover cap is relaxed to the smallest feasible
-value (bisection) and flagged.
+value (bisection) and flagged. If no valid portfolio is found at all, the fund holds the benchmark
+(diagnostics flag 'fallback_to_benchmark').
 
 Entry point for the backtest and the app: propose_portfolio(month, inputs, x_prev, rules, ...).
 rules: 'full' (mandate), 'long_only' (x >= 0 only), 'none' (fully invested only).
@@ -181,12 +182,16 @@ def propose_portfolio(month, inputs, x_prev=None, rules="full", confidence=confi
     if x_prev is not None:
         x_prev = pd.Series(x_prev, index=TICKERS) if not isinstance(x_prev, pd.Series) else x_prev[TICKERS]
     x, ok, relaxed = propose_weights(alpha, Sigma, rules, x_prev, max_turnover, te)
+    fallback = not ok
+    if fallback:   # no valid portfolio found: hold the benchmark, which always meets the mandate (TE = 0)
+        x = BENCH.copy()
 
     pi = implied_excess_returns(Sigma, BENCH, config.BENCHMARK_SR)[0]   # display only
     a = (x - BENCH).values
     diagnostics = {
         "month": month,
         "ok": ok,
+        "fallback_to_benchmark": fallback,
         "violations": check_rules(x, rules),
         "relaxed_turnover_cap": relaxed,
         "te_ex_ante": tracking_error(x, Sigma),

@@ -70,6 +70,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
             "turnover_ex_ante": diag.get("turnover"), "te_ex_ante": diag.get("te_ex_ante"),
             "expected_active_return": diag.get("expected_active_return"),
             "relaxed_turnover_cap": diag.get("relaxed_turnover_cap"),
+            "fallback_to_benchmark": diag.get("fallback_to_benchmark", False),
             "violations": "; ".join(diag.get("violations", [])),
             **{f"w_{t}": x[t] for t in TICKERS},
         })

@@ -33,6 +33,9 @@ c3.metric("Active share", common.pct(active.abs().sum() / 2, 1), border=True)
 c4.metric("Rules", "✅ All satisfied" if not diag["violations"] else "❌ Violated", border=True)
 if diag["violations"]:
     st.error("Violations: " + ", ".join(diag["violations"]))
+if diag["fallback_to_benchmark"]:
+    st.warning("The optimizer found no portfolio that meets the mandate and the tracking-error budget, "
+               "so the fund holds the benchmark this month.")
 
 # --- Weights vs benchmark, and active weights -----------------------------------------------------
 classes = {t: c for c, ts in config.ASSET_CLASSES.items() for t in ts}

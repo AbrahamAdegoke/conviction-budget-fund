@@ -68,3 +68,14 @@ def test_no_look_ahead(inputs):
     corrupted = type(inputs)(daily=daily, month_ends=inputs.month_ends, views=inputs.views)
     _, other = run_backtest("full", corrupted, FIRST, "2016-06")
     pd.testing.assert_frame_equal(weights(base), weights(other))
+
+
+def test_failed_optimization_falls_back_to_benchmark(inputs, monkeypatch):
+    import src.optimizer as op
+    equal = pd.Series(1 / len(TICKERS), index=TICKERS)        # what a broken optimizer might return
+    monkeypatch.setattr(op, "propose_weights", lambda *args, **kwargs: (equal, False, 2.0))
+    x, diag = op.propose_portfolio("2020-03", inputs, x_prev=BENCH, rules="full")
+    assert diag["fallback_to_benchmark"] and not diag["ok"]
+    assert np.allclose(x.values, BENCH.values) and check_rules(x, "full") == []
+    _, monthly = run_backtest("full", inputs=inputs, first="2016-01", last="2016-02")
+    assert monthly["fallback_to_benchmark"].all()
