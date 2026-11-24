@@ -74,3 +74,14 @@ def test_jensen_newey_west_matches_statsmodels():
                                                                      "use_correction": False})
     assert np.isclose(alpha, fit.params[0]) and np.isclose(beta, fit.params[1])
     assert np.isclose(t, fit.tvalues[0], rtol=1e-6)
+
+
+def test_te_by_block_is_consistent():
+    from src.backtest import load_results
+    from src.metrics import te_by_block
+    from src.optimizer import load_inputs
+    _, _, log = load_results()
+    t = te_by_block(log, load_inputs(), "bl_full")
+    blocks = t.drop(index="Total")
+    assert np.isclose(blocks["Share of realized active variance"].sum(), 1.0)
+    assert abs(t.loc["Total", "Ex-ante TE"] - 0.02) < 0.002          # the 2% budget, used almost every month

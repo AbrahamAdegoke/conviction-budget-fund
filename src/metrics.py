@@ -16,8 +16,9 @@ import numpy as np
 import pandas as pd
 
 from .backtest import RESULTS_DIR, load_results
-from .config import ANNUALIZATION as A
-from .data import load_risk_free
+from .black_litterman import covariance_at
+from .config import ANNUALIZATION as A, ASSET_CLASSES, BENCHMARK
+from .data import TICKERS, load_risk_free
 
 ES_LEVEL = 0.95
 
@@ -119,11 +120,51 @@ def by_year(net, benchmark="benchmark"):
     return pd.concat({"Active return": g.mean() * A, "Realized TE": g.std() * np.sqrt(A)}, axis=1)
 
 
+def te_by_block(log, inputs, portfolio="bl_full"):
+    """Ex-ante vs realized tracking error of the equity, bond and alternative positions.
+
+    For each decision month: active weights a = target - benchmark (drift within the month ignored), ex-ante
+    variance a_B' Sigma a_B of each block B with the covariance known at the decision, and the realized daily
+    active return of the block over the next month. Ex-ante TE = sqrt(mean ex-ante variance); realized TE =
+    std of the daily block returns x sqrt(252). Share = contribution of the block to the realized active
+    variance (the shares sum to 1).
+    """
+    rows = log.loc[log["portfolio"] == portfolio].set_index("month")
+    bench = pd.Series(BENCHMARK)[TICKERS]
+    rets = inputs.daily[TICKERS]
+    blocks = {**ASSET_CLASSES, "Total": TICKERS}
+    exa = {b: [] for b in blocks}
+    real = {b: [] for b in blocks}
+    for month, row in rows.iterrows():
+        m = pd.Period(month, "M")
+        if m + 1 not in inputs.month_ends.index:
+            continue
+        Sigma = covariance_at(inputs.daily, inputs.month_ends[m])[0].values
+        a = row[[f"w_{t}" for t in TICKERS]].to_numpy(float) - bench.values
+        r = rets.loc[(rets.index > inputs.month_ends[m]) & (rets.index <= inputs.month_ends[m + 1])].values
+        for b, names in blocks.items():
+            a_b = np.where([t in names for t in TICKERS], a, 0.0)
+            exa[b].append(a_b @ Sigma @ a_b)
+            real[b].append(r @ a_b)
+    total = np.concatenate(real["Total"])
+    out = {}
+    for b in blocks:
+        rb = np.concatenate(real[b])
+        ex_ante, realized = np.sqrt(np.mean(exa[b])), rb.std() * np.sqrt(A)
+        out[b] = {"Ex-ante TE": ex_ante, "Realized TE": realized, "Realized / ex-ante": realized / ex_ante,
+                  "Share of realized active variance": np.cov(rb, total)[0, 1] / total.var(ddof=1)}
+    return pd.DataFrame(out).T
+
+
 def compute_all(save=True):
     """Metrics from the saved backtest; saved for the app's Results page (works offline)."""
+    from .optimizer import load_inputs                         # local import: optimizer imports backtest
     net, gross, log = load_results()
     table, yearly = summary(net, gross, log), by_year(net)
+    inputs = load_inputs()
+    blocks = pd.concat({p: te_by_block(log, inputs, p) for p in ["bl_full", "bl_te_only"]}, names=["portfolio", "block"])
     if save:
         table.to_csv(RESULTS_DIR / "metrics.csv", index_label="portfolio")
         yearly.to_csv(RESULTS_DIR / "metrics_by_year.csv", index_label="year")
+        blocks.to_csv(RESULTS_DIR / "te_by_block.csv")
     return table, yearly
