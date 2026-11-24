@@ -89,3 +89,13 @@ def test_naive_mvo_alpha_has_no_look_ahead(inputs):
     later = shocked.index > month_end
     shocked.loc[later, TICKERS] = shocked.loc[later, TICKERS] * 50
     assert np.allclose(naive_alpha(shocked, month_end), before)
+
+
+def test_frontier_rules_only_lower_it(inputs):
+    from src.frontier import frontier
+    f = frontier("2026-10", inputs, te_grid=[0.01, 0.02, 0.04]).set_index(["rules", "TE budget"])
+    mu = f["Expected active return"]
+    free = f.loc["none", "Ex-ante IR"]
+    assert np.allclose(free, free.iloc[0], rtol=1e-3)            # no rules: straight line, constant IR
+    for te in [0.01, 0.02, 0.04]:                                  # nested rule sets: full <= long-only <= none
+        assert mu[("full", te)] <= mu[("long_only", te)] + 1e-7 <= mu[("none", te)] + 2e-7
