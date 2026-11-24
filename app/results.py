@@ -107,6 +107,24 @@ st.dataframe(show.apply(fmt, axis=1).style.apply(
 st.caption("Annualized except drawdowns and ES (daily). Benchmark active metrics are zero by construction (–). "
            "Benchmark turnover is its monthly rebalancing, charged no cost.")
 
+# Robustness: the same model on the calibration period, other strategies, and one setting changed at a time.
+st.subheader("Other periods and settings")
+rows = [("BL, full mandate (base case)", "bl_full", 0.02, 5.0), ("BL, TE budget only", "bl_te_only", 0.02, 5.0),
+        ("Naive MVO", "mvo_naive", 0.02, 5.0), ("Full mandate, no trading cost", "bl_full", 0.02, 0.0),
+        ("Full mandate, 25 bp cost", "bl_full", 0.02, 25.0), ("Full mandate, 1% TE budget", "bl_full", 0.01, 5.0),
+        ("Full mandate, 3% TE budget", "bl_full", 0.03, 5.0)]
+v = variants.set_index(["period", "strategy", "TE budget", "cost (bp)"])
+robust = pd.DataFrame({
+    (period, col): [fmt_v(v.loc[(period, s, te, c), measure]) for _, s, te, c in rows]
+    for period in ["2009-2015", "2016-2026"]
+    for col, measure, fmt_v in [("Active return", "Active return (net)", lambda x: f"{x:+.2%}"),
+                                ("IR", "Information ratio", lambda x: f"{x:.2f}")]},
+    index=[r[0] for r in rows])
+st.dataframe(robust, width="stretch")
+st.caption("2009–2015 is the period used to calibrate the views; 2016–2026 is the test period. Nothing was tuned "
+           "on these numbers. The price of the mandate is the gap between the first two rows: it changes sign "
+           "between the periods.")
+
 # Weights and trading: what the fund held at each decision and how much it traded.
 st.divider()
 st.subheader("Weights and trading over time")
