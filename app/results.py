@@ -77,7 +77,7 @@ st.subheader("All metrics")
 ratios = ["Sharpe", "Information ratio", "t-stat active return", "Jensen beta",
           "t-stat Jensen alpha (Newey-West)"]
 key_rows = ["Active return (net)", "Realized TE", "Information ratio"]
-show = metrics.T[["benchmark", "bl_te_only", "bl_full"]].rename(columns=labels)
+show = metrics.T[["benchmark", "bl_te_only", "bl_full", "mvo_naive"]].rename(columns=labels)
 fmt = lambda row: row.map(lambda v: "–" if pd.isna(v) or (v == 0 and row.name != "Return (CAGR)") else
                           (f"{v:.2f}" if row.name in ratios else f"{v:.2%}"))
 st.dataframe(show.apply(fmt, axis=1).style.apply(

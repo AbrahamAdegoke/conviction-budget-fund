@@ -9,7 +9,8 @@ from src.data import TICKERS
 from src.optimizer import BENCH, load_inputs, propose_portfolio
 
 RULE_SETS = {"Full mandate": "full", "TE budget only (long-only)": "long_only"}
-PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only", "bl_full": "BL, full mandate"}
+PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only", "bl_full": "BL, full mandate",
+                    "mvo_naive": "Naive MVO"}
 
 # User choices made on "Mandate and Views", used by "Proposed Portfolio"
 DEFAULTS = {"month": None, "rules_label": "Full mandate", "confidence": config.DEFAULT_CONFIDENCE,
@@ -74,7 +75,7 @@ def pct(x, digits=2):
 
 # Look and feel: the same colours on every page, so a portfolio is recognised at a glance.
 # One colour per portfolio on every chart; benchmark in neutral ink (it is the reference).
-COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834"}
+COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834", "mvo_naive": "#6250d6"}
 LABEL_COLORS = {PORTFOLIO_LABELS[k]: v for k, v in COLORS.items()}
 ETF_COLORS = dict(zip(TICKERS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
                                 "#e87ba4", "#008300", "#6250d6", "#e34948"]))

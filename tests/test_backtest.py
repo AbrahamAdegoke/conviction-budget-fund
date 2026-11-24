@@ -79,3 +79,13 @@ def test_failed_optimization_falls_back_to_benchmark(inputs, monkeypatch):
     assert np.allclose(x.values, BENCH.values) and check_rules(x, "full") == []
     _, monthly = run_backtest("full", inputs=inputs, first="2016-01", last="2016-02")
     assert monthly["fallback_to_benchmark"].all()
+
+
+def test_naive_mvo_alpha_has_no_look_ahead(inputs):
+    from src.optimizer import naive_alpha
+    month_end = inputs.month_ends[pd.Period("2020-06", "M")]
+    before = naive_alpha(inputs.daily, month_end)
+    shocked = inputs.daily.copy()
+    later = shocked.index > month_end
+    shocked.loc[later, TICKERS] = shocked.loc[later, TICKERS] * 50
+    assert np.allclose(naive_alpha(shocked, month_end), before)

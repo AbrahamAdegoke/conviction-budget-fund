@@ -221,3 +221,30 @@ def propose_portfolio(month, inputs, x_prev=None, rules="full", confidence=confi
                                "posterior_spread": P @ (pi + alpha)}, index=names),
     }
     return x, diagnostics
+
+
+# Naive mean-variance benchmark strategy (the proposal's 4th portfolio): same optimizer, mandate, TE budget,
+# turnover cap and cost penalty, but alpha is simply the average daily return of the last 252 sessions.
+def naive_alpha(daily, month_end, window=config.COV_WINDOW):
+    """Annualized mean of the last `window` regular daily returns up to month_end (no later data)."""
+    hist = daily.loc[:pd.Timestamp(month_end)]
+    hist = hist.loc[hist["regular"].astype(bool), TICKERS].tail(window)
+    return hist.mean().to_numpy(float) * config.ANNUALIZATION
+
+
+def propose_mvo(month, inputs, x_prev=None, rules="full", max_turnover=config.MAX_TURNOVER,
+                te=config.TE_TARGET, cost=None):
+    """Naive MVO weights for `month` (same diagnostics keys as propose_portfolio that the backtest logs)."""
+    month = pd.Period(month, "M")
+    Sigma, _, _ = covariance_at(inputs.daily, inputs.month_ends[month])
+    alpha = naive_alpha(inputs.daily, inputs.month_ends[month])
+    if x_prev is not None:
+        x_prev = pd.Series(x_prev, index=TICKERS) if not isinstance(x_prev, pd.Series) else x_prev[TICKERS]
+    cost = config.cost_penalty() if cost is None else cost
+    x, ok, relaxed = propose_weights(alpha, Sigma, rules, x_prev, max_turnover, te, cost)
+    if not ok:
+        x = BENCH.copy()
+    return x, {"ok": ok, "fallback_to_benchmark": not ok, "violations": check_rules(x, rules),
+               "relaxed_turnover_cap": relaxed, "te_ex_ante": tracking_error(x, Sigma),
+               "expected_active_return": float(alpha @ (x - BENCH).values),
+               "turnover": None if x_prev is None else float(np.abs(x - x_prev).sum())}

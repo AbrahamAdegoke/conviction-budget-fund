@@ -19,7 +19,7 @@ import pandas as pd
 
 from . import config
 from .data import PROJECT_ROOT, TICKERS
-from .optimizer import BENCH, load_inputs, propose_portfolio
+from .optimizer import BENCH, load_inputs, propose_mvo, propose_portfolio
 
 RESULTS_DIR = PROJECT_ROOT / "data" / "results"
 
@@ -27,7 +27,8 @@ FIRST_DECISION, LAST_DECISION = "2015-12", "2026-09"   # returns earned Jan 2016
 COST_BP = config.TRADING_COST_BP
 
 # Portfolio name -> optimizer rule set (None = fixed benchmark weights)
-PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full"}
+# "mvo" = naive mean-variance (past-year average returns as alpha), full mandate
+PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full", "mvo_naive": "mvo"}
 
 
 def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, cost_bp=COST_BP,
@@ -49,6 +50,8 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
         # 1) Decision at the close of month-end m
         if rules is None:
             x, diag = BENCH.copy(), {}
+        elif rules == "mvo":
+            x, diag = propose_mvo(m, inputs, x_prev=w, max_turnover=max_turnover)
         else:
             x, diag = propose_portfolio(m, inputs, x_prev=w, rules=rules,
                                         confidence=confidence, max_turnover=max_turnover)
@@ -81,7 +84,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
 
 
 def run_all(save=True, **kwargs):
-    """Run the three portfolios of the plan and save the results for task 8 and the app (offline)."""
+    """Run the four portfolios of the plan and save the results for task 8 and the app (offline)."""
     inputs = load_inputs()
     daily, monthly = {}, {}
     for name, rules in PORTFOLIOS.items():
