@@ -127,6 +127,9 @@ Tick the box and record the choice once the team has agreed.
 
 - **Reading:** the less weight the trend view gets, the better the fund does, on both periods and monotonically. With the bond cap and the cost penalty in place, the momentum views carry the result and the trend (equities vs bonds timing) view dilutes it. With K_TREND × 0 the trend view is still in the model but says "no spread beyond equilibrium".
 - **One K for three asset classes:** the 5% cap binds for 22.6% of the alternatives views, 7.1% of equities and 1.2% of bonds on 2009–2015 (20.6%, 0.8%, 0.0% on 2016–2026; trend view 10.7% and 6.1%). The cap truncates the information of one class only.
+- **Reversed views (check of information content):** with every Q multiplied by −1 the full mandate earns
+  −0.82% a year on 2009–2015 (IR −0.41, vs +0.83%, 0.42) and −0.75% on 2016–2026 (IR −0.35, vs +0.49%, 0.22): the
+  views carry information, even if the sample is too short to prove it statistically.
 - **Decision (24 Nov):** no change to the model. The ratio was not chosen to maximize performance, and changing it now would be decided after seeing the test period. Reported as a sensitivity result and a limit.
 
 ## Carried over from `journal_donnees.md` (owner Abraham / Assia)

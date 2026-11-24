@@ -4,8 +4,10 @@
    K_TREND multiplied by 0, 0.5, 1 and 2 (K_MOM unchanged), and the full-mandate fund is backtested on the
    calibration period (2009-2015) and the test period (2016-2026). The model itself is not changed.
 2. Share of views where the 5% cap binds, per asset class (one K_MOM is pooled across the three classes).
+3. Reversed views: every Q multiplied by -1. If the views carry information, the fund should lose about what
+   it gains; if the result were luck, the sign would not matter.
 
-Run from the repository root:  python scripts/sensitivity_k_ratio.py   (about 2 minutes)
+Run from the repository root:  python scripts/sensitivity_k_ratio.py   (about 3 minutes)
 """
 
 import dataclasses
@@ -50,6 +52,23 @@ def k_ratio_table():
                                           values=["IR", "active return"])
 
 
+def reversed_views_table():
+    """Active return and IR of the full mandate with the views as they are and with every Q reversed."""
+    base = load_inputs()
+    reversed_views = base.views.copy()
+    reversed_views["Q"] = -reversed_views["Q"]
+    rows = []
+    for label, inputs in [("views as they are", base),
+                          ("views reversed", dataclasses.replace(base, views=reversed_views))]:
+        for period, (first, last) in PERIODS.items():
+            bench, _ = run_backtest(None, inputs=inputs, first=first, last=last)
+            daily, _ = run_backtest("full", inputs=inputs, first=first, last=last)
+            active = daily["net"] - bench["net"]
+            rows.append({"views": label, "period": period, "active return": 252 * active.mean(),
+                         "IR": 252 * active.mean() / (active.std() * np.sqrt(252))})
+    return pd.DataFrame(rows).pivot_table(index="views", columns="period", values=["IR", "active return"])
+
+
 def capped_share_table():
     """Share of views at the 5% cap, per asset class and period."""
     views = pd.read_csv(data.PROCESSED_DIR / "bl_views.csv")
@@ -65,4 +84,5 @@ def capped_share_table():
 if __name__ == "__main__":
     pd.set_option("display.width", 200)
     print("Full mandate, 5 bp, current model:\n", k_ratio_table().round(3), "\n")
-    print("Share of views at the 5% cap:\n", capped_share_table().round(3))
+    print("Share of views at the 5% cap:\n", capped_share_table().round(3), "\n")
+    print("Reversed views:\n", reversed_views_table().round(4))

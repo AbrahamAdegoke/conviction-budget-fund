@@ -39,6 +39,7 @@ Where to read more: `docs/open_decisions.md` (item number in brackets).
 - *Why does confidence barely matter?* Only the direction of α matters and the budget is always fully used [4].
 - *How is the view size K set?* So that the 5% cap binds about 10% of the time on 2009–2015 only (K = 0.16 and 0.39); a test checks it.
 - *Benchmark Sharpe 0.40?* Only used to display the implied spreads; it cancels out of the weights. A cautious long-run assumption (historical 0.88 on 2009–2015, 0.60 on 2016–2026).
+- *Why "best minus worst" and 12-1 momentum?* Simple and robust: one view per asset class, the middle ETF is ignored; the alternatives view (two ETFs) exists every month, even for a tiny spread. Skipping the last month comes from stock-level reversal; for asset-class ETFs it is a convention more than a necessity.
 - *Look-ahead?* Momentum skips the last month, the trend uses the close of the decision day, trades happen the next session; tests shock future data and check nothing changes.
 
 **Choices added after the first backtest**
@@ -49,6 +50,8 @@ Where to read more: `docs/open_decisions.md` (item number in brackets).
 **Results**
 - *Realized TE above 2%?* Monthly 1.84%, within budget. Daily active returns partly cancel within a month, so √252 × daily overstates the monthly risk. Measured daily, it exceeds 2% in 6 of 11 years, most in 2018 (2.8%) and 2026 (3.0%).
 - *Is the alpha significant?* No: Jensen t-stat 0.83. With an IR of 0.22, about 80 years of data would be needed for t = 2.
+- *So is it luck?* Not only: with every view reversed the fund loses about what it gains (−0.82% vs +0.83% a year on 2009–2015, −0.75% vs +0.49% on 2016–2026). The views carry information; the sample is too short to prove it statistically (`scripts/sensitivity_k_ratio.py`).
+- *Is the portfolio concentrated?* SPY sits at its 40% cap in 34% of months and bonds at their 25% floor in 20%: the rules bind often, which is why they have a measurable price.
 - *The naive MVO does as well: why use Black-Litterman?* The past-year average return is itself a momentum signal on all 8 ETFs. BL gives controlled, explainable bets and trades less (0.99 vs 1.58 a year).
 - *What do the rules cost?* −0.34% a year on 2016–2026 but +0.31% on 2009–2015: they protect in some markets only.
 - *What would you change next?* The trend view dilutes the momentum views (IR 0.50 with a neutral trend view vs 0.22); we did not change it because that would be tuning on the test period [10]. Also: one K per asset class, and the real-estate vs gold risk.
