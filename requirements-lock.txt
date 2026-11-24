@@ -1,0 +1,13 @@
+# Exact versions of the direct dependencies with which the 73 tests pass (Python 3.11.4, 24 Nov 2026).
+# Use this file to reproduce the tested setup; requirements.txt keeps minimum versions only.
+pandas==3.0.3
+numpy==2.4.6
+openpyxl==3.1.5
+pandas_market_calendars==5.6.1
+scipy==1.17.1
+pytest==9.2.0
+jupyter==1.0.0
+ipykernel==7.4.0
+streamlit==1.67.0
+plotly==7.1.0
+jinja2==3.1.6

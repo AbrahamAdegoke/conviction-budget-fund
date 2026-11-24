@@ -5,24 +5,33 @@ and a long-only mandate. Monthly walk-forward backtest, January 2016 – October
 
 ## Setup
 
-Python 3.11+.
+Python 3.11+. Run every command from the repository root (otherwise `src` is not found).
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
+# macOS / Linux
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q          # 72 tests
+.venv/bin/python -m pytest -q          # 73 tests
+# Windows (PowerShell)
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python -m pytest -q      # 73 tests
 ```
+
+`requirements.txt` gives minimum versions. To reproduce the exact tested setup (Python 3.11.4), install
+`requirements-lock.txt` instead.
 
 ## Run
 
 ```bash
-.venv/bin/streamlit run streamlit_app.py
+.venv/bin/streamlit run streamlit_app.py        # Windows: .venv\Scripts\streamlit run streamlit_app.py
 ```
 
-The app reads the saved files in `data/`, so it runs offline. Pages:
-1. **Mandate and Views** – benchmark, rules, automatic views for a chosen month, confidence, one manual relative view.
-2. **Proposed Portfolio** – optimized weights vs benchmark, ex-ante TE, rule checks, effect of the manual view.
-3. **Results** – backtest metrics and charts (base case).
+Then open http://localhost:8501 (the browser does not open by itself: `.streamlit/config.toml` sets
+`headless = true`). The app reads the saved files in `data/`, so it runs offline. Pages:
+1. **The Fund** – what the fund does, how the model works each month, headline results and their limits.
+2. **Mandate and Views** – benchmark, rules, automatic views for a chosen month, confidence, one manual relative view.
+3. **Proposed Portfolio** – optimized weights vs benchmark, ex-ante TE, rule checks, effect of the manual view.
+4. **Results** – backtest metrics and charts (base case).
 
 To rebuild the backtest results after a change:
 
