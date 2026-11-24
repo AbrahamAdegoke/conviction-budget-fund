@@ -8,9 +8,9 @@ st.set_page_config(page_title="Conviction Budget Fund", page_icon="📈", layout
 
 pages = [
     st.Page("app/the_fund.py", title="The Fund", icon="💡", default=True),
-    st.Page("app/mandate_and_views.py", title="Mandate and Views", icon="🧭"),
-    st.Page("app/proposed_portfolio.py", title="Proposed Portfolio", icon="🧺"),
-    st.Page("app/results.py", title="Results", icon="📊"),
+    st.Page("app/mandate_and_views.py", title="Mandate and Views"),
+    st.Page("app/proposed_portfolio.py", title="Proposed Portfolio"),
+    st.Page("app/results.py", title="Results"),
 ]
 nav = st.navigation(pages)
 
