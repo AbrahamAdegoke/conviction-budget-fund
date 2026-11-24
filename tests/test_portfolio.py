@@ -186,3 +186,12 @@ def test_cost_penalty_units_and_effect():
     assert ok_free and ok_cheap and ok_dear
     assert turnover(free) > 0.01 and turnover(cheap) <= turnover(free) + 1e-6
     assert turnover(dear) < 1e-4                                 # a trade that cannot pay its cost is not made
+
+
+def test_overlapping_certain_views_give_a_clear_error():
+    Sigma, pi = make_sigma(), np.zeros(N)
+    P = np.zeros((2, N)); P[0, [6, 7]] = [1, -1]; P[1, [6, 7]] = [-1, 1]   # VNQ > GLD and GLD > VNQ
+    Q = np.array([0.01, 0.01])
+    with pytest.raises(ValueError, match="100% confidence overlap"):
+        bl_posterior(pi, Sigma, P, Q, [1.0, 1.0])
+    assert np.isfinite(bl_posterior(pi, Sigma, P, Q, [1.0, 0.9])).all()    # one view below 100%: fine

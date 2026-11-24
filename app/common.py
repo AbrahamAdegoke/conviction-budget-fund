@@ -54,10 +54,15 @@ def proposal(month, rules, confidence, manual):
 
 
 def current_proposal(with_manual=True):
+    """Proposal for the current choices; a clear message instead of a crash if the views cannot be combined."""
     s = st.session_state
     mv = manual_view() if with_manual else None
-    return proposal(s.month, RULE_SETS[s.rules_label], s.confidence,
-                    tuple(sorted(mv.items())) if mv else None)       # hashable for the cache
+    try:
+        return proposal(s.month, RULE_SETS[s.rules_label], s.confidence,
+                        tuple(sorted(mv.items())) if mv else None)   # hashable for the cache
+    except ValueError as exc:
+        st.error(f"The portfolio cannot be computed with these settings: {exc}")
+        st.stop()
 
 
 @st.cache_data

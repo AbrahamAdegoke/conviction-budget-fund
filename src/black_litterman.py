@@ -79,6 +79,10 @@ def bl_posterior(mu_prior, Sigma, P, Q, conf, tau=0.05):
     c = np.broadcast_to(np.asarray(conf, float), Q.shape)
     if np.any(c <= 0) or np.any(c > 1):
         raise ValueError("Confidence must be in (0, 1]")
+    certain = P[c >= 1.0]                     # views held as exactly true (Omega_k = 0)
+    if len(certain) > 1 and np.linalg.matrix_rank(certain) < len(certain):
+        raise ValueError("Views held with 100% confidence overlap (one is a combination of the others), so they "
+                         "cannot all hold exactly. Lower one of the confidences below 100%.")
     Gamma = tau * Sigma
     Omega = np.diag((1 - c) / c * np.diag(P @ Gamma @ P.T))
     return np.asarray(mu_prior, float) + Gamma @ P.T @ np.linalg.solve(P @ Gamma @ P.T + Omega, Q - P @ mu_prior)

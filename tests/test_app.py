@@ -23,3 +23,12 @@ def test_manual_view_changes_the_portfolio():
     at.run()
     effect = at.dataframe[0].value["Effect of manual view"]
     assert not at.exception and effect.abs().sum() > 0.01
+
+
+def test_overlapping_certain_views_show_a_message_not_a_crash():
+    at = AppTest.from_file(PAGES[3], default_timeout=120)
+    at.session_state["confidence"], at.session_state["use_manual"] = 1.0, True
+    at.session_state["mv_long"], at.session_state["mv_short"] = "GLD", "VNQ"   # opposite of an automatic view
+    at.session_state["mv_conf"] = 1.0
+    at.run()
+    assert not at.exception and at.error and "100% confidence" in at.error[0].value
