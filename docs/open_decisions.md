@@ -114,6 +114,21 @@ Tick the box and record the choice once the team has agreed.
 - **Result (5 bp, after decisions 6 and 7):** 2009–2015 full mandate IR 0.30 → 0.42, turnover 1.60 → 0.84 a year; 2016–2026 full mandate IR 0.17 → 0.22 (+0.36% → +0.49% a year), turnover 1.86 → 0.99, cost 0.09% → 0.05% a year; TE budget only IR 0.25 → 0.36.
 - **Limit:** alpha is not a calibrated forecast (its size depends on K and on the confidence), so the strength of the penalty depends on that scale.
 
+### 10. Sensitivity of the results to the size of the views (24 Nov, no model change)
+- **Why:** only the direction of alpha matters, so the common scale of the views does not, but the weight of the trend view relative to the momentum views does. That weight is K_TREND / K_MOM ≈ 2.4, set by a mechanical rule (the 5% cap binds about 10% of the time for each signal), not by an economic argument.
+- **Test:** views rebuilt with K_TREND × 0, 0.5, 1, 2 (K_MOM unchanged), current model (decisions 6, 7, 9), full mandate, 5 bp. Reproduce with `python scripts/sensitivity_k_ratio.py`.
+
+  | K_TREND × | K_TREND / K_MOM | IR 2009–2015 | IR 2016–2026 | Active return 2009–2015 | Active return 2016–2026 |
+  |---|---|---|---|---|---|
+  | 0 (trend view neutral) | 0 | 0.69 | 0.50 | +1.27% | +1.08% |
+  | 0.5 | 1.2 | 0.58 | 0.32 | +1.10% | +0.71% |
+  | **1 (current)** | **2.4** | **0.42** | **0.23** | **+0.83%** | **+0.49%** |
+  | 2 | 4.9 | 0.31 | 0.16 | +0.62% | +0.35% |
+
+- **Reading:** the less weight the trend view gets, the better the fund does, on both periods and monotonically. With the bond cap and the cost penalty in place, the momentum views carry the result and the trend (equities vs bonds timing) view dilutes it. With K_TREND × 0 the trend view is still in the model but says "no spread beyond equilibrium".
+- **One K for three asset classes:** the 5% cap binds for 22.6% of the alternatives views, 7.1% of equities and 1.2% of bonds on 2009–2015 (20.6%, 0.8%, 0.0% on 2016–2026; trend view 10.7% and 6.1%). The cap truncates the information of one class only.
+- **Decision (24 Nov):** no change to the model. The ratio was not chosen to maximize performance, and changing it now would be decided after seeing the test period. Reported as a sensitivity result and a limit.
+
 ## Carried over from `journal_donnees.md` (owner Abraham / Assia)
 
 - [X] **Execution price:** trades happen at the close of the first session of month t+1; that session is earned by the old, drifted weights (see section 5 of the journal). Implemented in `src/backtest.py`.
