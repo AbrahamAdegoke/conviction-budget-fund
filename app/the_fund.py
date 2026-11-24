@@ -32,14 +32,14 @@ base = variants[(variants["TE budget"] == config.TE_TARGET) & (variants["cost (b
 base = base.set_index(["period", "strategy"])["Active return (net)"]
 rules_price = {p: base[(p, "bl_full")] - base[(p, "bl_te_only")] for p in ["2009-2015", "2016-2026"]}
 
-st.markdown(f"#### Benchmark-like risk, plus a disciplined and fully controlled source of extra return.")
+st.markdown("#### A benchmark portfolio with small, controlled bets on top.")
 st.markdown(
     f"We hold a diversified portfolio of 8 ETFs and, each month, take small bets on the ETFs our signals favour. "
     f"We decide in advance how far we may deviate from the benchmark (a **{config.TE_TARGET:.0%} tracking-error "
     f"budget**, our *conviction budget*) and spend it on our best ideas, never more.")
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Extra return vs benchmark", f"{full['Active return (net)']:+.2%} a year", border=True,
+c1.metric("Extra return vs benchmark, a year", f"{full['Active return (net)']:+.2%}", border=True,
           delta="net of trading costs", delta_color="off")
 c2.metric("Sharpe ratio", f"{full['Sharpe']:.2f}", border=True,
           delta=f"benchmark {bench['Sharpe']:.2f}", delta_color="off")
@@ -60,17 +60,15 @@ steps = [
                             "benchmark the right portfolio), then blend in our views according to our "
                             "confidence. Expected returns stay reasonable, never extreme."),
     ("3 · Optimizer", f"Pick the weights with the highest expected extra return, with tracking error ≤ "
-                      f"{config.TE_TARGET:.0%}, the mandate respected (bonds {config.BOND_MIN:.0%}–"
-                      f"{config.BOND_MAX:.0%}, EEM ≤ ⅓ of equities, each ETF ≤ {config.MAX_WEIGHT:.0%}, "
-                      f"each bond ETF within ±{config.BOND_ACTIVE_CAP * 100:.0f} points of the benchmark, "
-                      f"long-only) and at most {config.MAX_TURNOVER:.0%} of the portfolio traded. A trade is "
-                      f"made only if its expected gain over {config.COST_HORIZON_MONTHS} months pays its cost."),
+                      f"{config.TE_TARGET:.0%}, every mandate rule respected (see **Mandate and Views**) and at "
+                      f"most {config.MAX_TURNOVER:.0%} of the portfolio traded. A trade is made only if its "
+                      f"expected gain over {config.COST_HORIZON_MONTHS} months pays its cost."),
     ("4 · Trade and hold", "Signal at the month-end close, trade at the next session, pay 5 bp on what we "
                            "trade, hold for the month, repeat. Tested walk-forward: each decision only "
                            "uses data available at the time."),
 ]
 for col, (title, text) in zip(st.columns(4), steps):
-    with col.container(border=True, height=270):
+    with col.container(border=True, height=340):
         st.markdown(f"**{title}**")
         st.markdown(text)
 
@@ -80,20 +78,21 @@ st.divider()
 st.subheader("What it delivered")
 left, right = st.columns(2, gap="large")
 with left:
-    order = ["benchmark", "bl_full", "bl_te_only"]
+    order = ["benchmark", "bl_full", "bl_te_only", "mvo_naive"]
     fig = go.Figure([go.Scatter(
         x=[metrics.loc[p, "Volatility"]], y=[metrics.loc[p, "Return (CAGR)"]], name=labels[p],
-        mode="markers+text", text=[labels[p]], textposition="top center",
+        mode="markers",
         marker=dict(size=16, color=common.COLORS[p]),
         hovertemplate=f"{labels[p]}<br>Return %{{y:.2%}}<br>Volatility %{{x:.2%}}<extra></extra>")
         for p in order])
     vol, ret = metrics.loc[order, "Volatility"], metrics.loc[order, "Return (CAGR)"]
-    common.style(fig, "Return vs risk (a year, net)", ".1%", height=380).update_layout(showlegend=False)
+    common.style(fig, "Return vs risk (a year, net)", ".1%", height=400).update_layout(
+        legend=dict(orientation="h", y=-0.22, yanchor="top", x=0, xanchor="left"))
     fig.update_xaxes(tickformat=".1%", title="Volatility",
                      range=[vol.min() - 0.006, vol.max() + 0.006])
     fig.update_yaxes(title="Return (CAGR)", range=[ret.min() - 0.004, ret.max() + 0.004])
     st.plotly_chart(fig, width="stretch")
-    st.caption("Higher and to the left is better. The views add return for almost no extra volatility.")
+    st.caption("Each dot is one portfolio over the whole test period. Higher and to the left is better.")
 with right:
     fig = go.Figure(go.Bar(
         x=active_by_year.index.astype(str), y=active_by_year.values,
@@ -132,20 +131,20 @@ st.divider()
 # Benefits and limits: why an investor would choose the fund, and what we do not claim.
 good, limits = st.columns(2, gap="large")
 with good:
-    st.subheader("Why choose it")
+    st.subheader("What the fund offers")
     st.markdown(f"""
-- **Beats the benchmark after costs:** {full['Active return (net)']:+.2%} a year with the full mandate,
+- **Extra return after costs:** {full['Active return (net)']:+.2%} a year with the full mandate,
   {te_only['Active return (net)']:+.2%} with the TE budget only.
-- **Same crash risk:** max drawdown {common.pct(full['Max drawdown'], 1)} vs {common.pct(bench['Max drawdown'], 1)},
+- **Similar total risk:** max drawdown {common.pct(full['Max drawdown'], 1)} vs {common.pct(bench['Max drawdown'], 1)},
   volatility {common.pct(full['Volatility'], 1)} vs {common.pct(bench['Volatility'], 1)}.
 - **Rules always respected:** {n_violations} mandate violations in {len(full_log)} monthly decisions; {
   "the turnover cap never had to be loosened" if n_relaxed == 0 else
   f"the turnover cap was loosened in only {n_relaxed} month{'s' if n_relaxed != 1 else ''}"}.
-- **Cheap:** {common.pct(full['Cost (per year)'])} a year of trading costs; most of the gross edge
-  ({full['Active return (gross)']:+.2%}) survives.
-- **Transparent and systematic:** every position comes from a view you can explain, with no discretionary
-  decisions.
-- **Flexible:** the manager can add a view and set its confidence, and sees the effect at once
+- **Low trading cost:** {common.pct(full['Cost (per year)'])} a year, out of a gross extra return of
+  {full['Active return (gross)']:+.2%}.
+- **Explainable:** every position comes from a view that can be read on **Mandate and Views**; no
+  discretionary decisions.
+- **Interactive:** add a view, set its confidence and see the new portfolio at once
   (**Mandate and Views**, **Proposed Portfolio**).
 """)
 with limits:
@@ -164,6 +163,6 @@ with limits:
   ({metrics.loc['mvo_naive', 'Turnover (two-way, per year)']:.0%} vs {full['Turnover (two-way, per year)']:.0%} of the
   portfolio a year). Black-Litterman's value here is control and explainability, not extra return.
 
-The model does not promise large returns. It promises a **disciplined use of a small, controlled risk budget**.
+In short: a **disciplined use of a small, controlled risk budget**, not a promise of large returns.
 """)
 st.caption("Details and all charts: **Results**. Backtest net of a 5 bp cost on traded notional.")

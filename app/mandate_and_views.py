@@ -57,13 +57,14 @@ c2.slider("Confidence in the automatic views", 0.05, 1.0, step=0.05, key="confid
 
 x, diag = common.current_proposal(with_manual=False)
 views = diag["views"]
-table = pd.DataFrame({"Signal adds (Q)": views["Q_over_equilibrium"], "Prior spread": views["prior_spread"],
-                      "Posterior spread": views["posterior_spread"]})
+table = pd.DataFrame({"Implied by the benchmark": views["prior_spread"],
+                      "Signal adds (Q)": views["Q_over_equilibrium"],
+                      "After all views": views["posterior_spread"]})
 st.dataframe(table.style.format("{:+.2%}"), width="stretch")
-st.caption("Q is the extra spread the signal adds on top of the spread the benchmark prior already implies "
-           "(equilibrium-relative views, docs/open_decisions.md item 2). The benchmark spread assumes a "
-           f"Sharpe ratio of {config.BENCHMARK_SR:.2f} for the benchmark: it changes the spreads shown here, "
-           "not the portfolio weights.")
+st.caption("Each row is a view \"A beats B\", as an expected return spread a year. The benchmark already "
+           "implies a spread; the signal adds Q on top of it; Black-Litterman then combines all views, which "
+           "gives the last column. The benchmark spread assumes a Sharpe ratio of "
+           f"{config.BENCHMARK_SR:.2f} for the benchmark: it changes the spreads shown here, not the weights.")
 
 st.divider()
 

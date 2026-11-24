@@ -31,7 +31,7 @@ c1.metric("Ex-ante tracking error", common.pct(diag["te_ex_ante"]), border=True,
           help=f"Budget {config.TE_TARGET:.0%}")
 c2.metric("Expected active return", common.pct(diag["expected_active_return"]), border=True)
 c3.metric("Active share", common.pct(active.abs().sum() / 2, 1), border=True)
-c4.metric("Rules", "✅ All satisfied" if not diag["violations"] else "❌ Violated", border=True)
+c4.metric("Mandate rules", "All met" if not diag["violations"] else "Violated", border=True)
 if diag["violations"]:
     st.error("Violations: " + ", ".join(diag["violations"]))
 if diag["fallback_to_benchmark"]:

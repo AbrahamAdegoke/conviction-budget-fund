@@ -85,8 +85,10 @@ def pct(x, digits=2):
 # One colour per portfolio on every chart; benchmark in neutral ink (it is the reference).
 COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834", "mvo_naive": "#6250d6"}
 LABEL_COLORS = {PORTFOLIO_LABELS[k]: v for k, v in COLORS.items()}
-ETF_COLORS = dict(zip(TICKERS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
-                                "#e87ba4", "#008300", "#6250d6", "#e34948"]))
+# ETFs: one hue per asset class (equities blue, bonds green, alternatives amber), lighter for smaller weights
+ETF_COLORS = {"SPY": "#1f4e8c", "EFA": "#2a78d6", "EEM": "#8ab8ec",
+              "IEF": "#0f6b4f", "LQD": "#1baf7a", "TLT": "#8fd9b6",
+              "VNQ": "#b06a12", "GLD": "#eda100"}
 OVER, UNDER = "#2a78d6", "#e34948"           # diverging pair for active weights
 INK, MUTED, GRID = "#0b0b0b", "#898781", "#e1e0d9"
 
