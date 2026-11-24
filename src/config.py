@@ -27,6 +27,18 @@ ANNUALIZATION = 252
 DEFAULT_CONFIDENCE = 0.50       # Idzorek confidence of the automatic views
 BENCHMARK_SR = 0.40             # only used to DISPLAY implied returns: it cancels out of alpha
 
+# Trading costs
+TRADING_COST_BP = 5.0           # cost on traded notional, in basis points (backtest and optimizer)
+COST_HORIZON_MONTHS = None      # months over which the expected gain of a trade must pay its cost;
+                                # None = the optimizer ignores costs (they are only charged in the backtest)
+
+
+def cost_penalty(cost_bp=None, horizon_months=None):
+    """Penalty per unit of two-way turnover in annual-return units: cost x 12 / horizon (0 if no horizon)."""
+    cost_bp = TRADING_COST_BP if cost_bp is None else cost_bp
+    horizon_months = COST_HORIZON_MONTHS if horizon_months is None else horizon_months
+    return 0.0 if not horizon_months else cost_bp / 1e4 * 12 / horizon_months
+
 # Automatic views (see src/signals.py)
 CALIB_START, CALIB_END = "2009-01", "2015-12"  # calibration window: the test period is never used
 VIEW_CAP = 0.05                 # |Q| <= 5% a year for every automatic view

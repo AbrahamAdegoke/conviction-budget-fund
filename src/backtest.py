@@ -24,7 +24,7 @@ from .optimizer import BENCH, load_inputs, propose_portfolio
 RESULTS_DIR = PROJECT_ROOT / "data" / "results"
 
 FIRST_DECISION, LAST_DECISION = "2015-12", "2026-09"   # returns earned Jan 2016 - Oct 2026
-COST_BP = 5.0
+COST_BP = config.TRADING_COST_BP
 
 # Portfolio name -> optimizer rule set (None = fixed benchmark weights)
 PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full"}
