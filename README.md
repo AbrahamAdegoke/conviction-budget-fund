@@ -11,10 +11,10 @@ Python 3.11+. Run every command from the repository root (otherwise `src` is not
 python -m venv .venv
 # macOS / Linux
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q          # 80 tests
+.venv/bin/python -m pytest -q          # 88 tests (1 skipped if statsmodels is missing)
 # Windows (PowerShell)
 .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m pytest -q      # 80 tests
+.venv\Scripts\python -m pytest -q      # 88 tests (1 skipped if statsmodels is missing)
 ```
 
 `requirements.txt` gives minimum versions. To reproduce the exact tested setup (Python 3.11.4), install
