@@ -1,7 +1,8 @@
 """Variants of the backtest on the calibration (2009-2015) and test (2016-2026) periods.
 
-What the proposal promised besides the base case: the four strategies, tracking-error budgets of 1, 2 and 3%,
-trading costs of 0, 5 and 25 bp, and the price of the mandate's rules (full mandate vs TE budget only).
+What the proposal promised besides the base case, one change at a time (no crossed grid): the four strategies,
+tracking-error budgets of 1 and 3% (at 5 bp), trading costs of 0 and 25 bp (at 2% TE), and the price of the
+mandate's rules (full mandate vs TE budget only).
 Everything uses the same model as the base case; nothing here is tuned. Results are saved to
 data/results/variants.csv for the app.
 
@@ -37,15 +38,15 @@ def measures(daily, monthly, bench):
 
 
 def run_variants(save=True):
-    """One row per (period, strategy, TE budget, cost). All strategies at the base case; the full mandate
-    over the whole TE x cost grid."""
+    """One row per (period, strategy, TE budget, cost): all strategies at the base case, then the full mandate
+    with one setting changed at a time."""
     inputs = load_inputs()
     rows = []
     for period, (first, last) in PERIODS.items():
         bench, _ = run_backtest(None, inputs=inputs, first=first, last=last)
         runs = [(s, config.TE_TARGET, COST_BP) for s in STRATEGIES]
-        runs += [("bl_full", te, c) for te in TE_BUDGETS for c in COSTS_BP
-                 if (te, c) != (config.TE_TARGET, COST_BP)]
+        runs += [("bl_full", te, COST_BP) for te in TE_BUDGETS if te != config.TE_TARGET]
+        runs += [("bl_full", config.TE_TARGET, c) for c in COSTS_BP if c != COST_BP]
         for strategy, te, cost in runs:
             daily, monthly = run_backtest(STRATEGIES[strategy], inputs=inputs, first=first, last=last,
                                           cost_bp=cost, te=te)
