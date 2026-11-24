@@ -79,5 +79,8 @@ docs/                 project plan, data log, optimizer interface, decisions
 
 ## Data
 
-ETF prices and total return indices: Refinitiv Datastream (licensed, not redistributed: the raw file is removed
-from the submission). Risk-free rate: FRED DGS1MO.
+ETF prices and total return indices: Refinitiv Datastream (licensed, not redistributed). The raw export
+`data/raw/ETF.xlsx` is not in the repository (it is listed in `.gitignore`). The tests, the backtest and the
+app do not need it: they read `data/processed/`. To rebuild `data/processed/` from scratch, put your own
+Datastream export at `data/raw/ETF.xlsx` and run `notebooks/01_data_audit.ipynb`.
+Risk-free rate: FRED DGS1MO (`data/raw/dgs1mo.csv`, public).

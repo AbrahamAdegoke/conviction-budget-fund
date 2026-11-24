@@ -8,3 +8,6 @@ venv/
 
 # Système
 .DS_Store
+
+# Licensed data (Refinitiv Datastream): never committed
+data/raw/*.xlsx
