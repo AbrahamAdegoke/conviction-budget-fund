@@ -106,18 +106,13 @@ def keep_sessions(df, sessions):
     return df.loc[df.index.isin(sessions)].copy(), non_sessions, missing_sessions
 
 
-# Quality checks: these functions only flag suspicious data (long runs of zero returns, very large
-# moves). Nothing is deleted automatically; every decision is logged in the quality report.
+# Quality check: flag long runs of zero returns (a stale price). Nothing is deleted automatically; the data
+# notebook logs every decision in the quality report.
 def zero_runs(series, min_len):
     """Runs of at least min_len consecutive zero returns: list of (start date, length)."""
     z = series.eq(0)
     block = (z != z.shift()).cumsum()
     return [(grp.index[0], len(grp)) for _, grp in series[z].groupby(block[z]) if len(grp) >= min_len]
-
-
-def extreme_returns(returns, threshold=0.15):
-    """Daily returns whose absolute value exceeds the threshold, per ticker."""
-    return {t: returns[t][returns[t].abs() > threshold] for t in returns.columns}
 
 
 # Returns: simple daily and monthly returns from the Total Return Index (dividends included),

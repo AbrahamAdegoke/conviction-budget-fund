@@ -14,7 +14,6 @@ Simulated with daily returns so the next-day trade is exact and task 8 can compu
 drawdown and ES from daily data.
 """
 
-import numpy as np
 import pandas as pd
 
 from . import config

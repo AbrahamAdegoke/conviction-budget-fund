@@ -5,8 +5,7 @@ import streamlit as st
 
 from src import config
 from src.backtest import RESULTS_DIR, load_results
-from src.data import TICKERS
-from src.optimizer import BENCH, load_inputs, propose_portfolio
+from src.optimizer import load_inputs, propose_portfolio
 
 RULE_SETS = {"Full mandate": "full", "TE budget only (long-only)": "long_only"}
 PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only", "bl_full": "BL, full mandate",
