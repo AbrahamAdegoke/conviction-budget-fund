@@ -32,10 +32,11 @@ PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full", "
 
 
 def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, cost_bp=COST_BP,
-                 max_turnover=config.MAX_TURNOVER, confidence=config.DEFAULT_CONFIDENCE):
+                 max_turnover=config.MAX_TURNOVER, confidence=config.DEFAULT_CONFIDENCE, te=config.TE_TARGET):
     """Sequential backtest of one portfolio.
 
-    rules: None for the benchmark, else 'full' / 'long_only' / 'none' (see optimizer.RULES).
+    rules: None for the benchmark, 'mvo' for the naive MVO, else 'full' / 'long_only' / 'none' (optimizer.RULES).
+    cost_bp is both charged on each trade and passed to the optimizer's cost penalty; te is the TE budget.
     Returns (daily, monthly):
       daily   DataFrame indexed by session: gross, cost, net (simple returns)
       monthly DataFrame indexed by decision month: target weights and trade/optimizer diagnostics
@@ -44,6 +45,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
     rets = inputs.daily[TICKERS]
     month_ends = inputs.month_ends
     w = BENCH.copy()                                      # holdings after drift
+    penalty = config.cost_penalty(cost_bp)                # the optimizer knows the cost it will be charged
     daily_rows, monthly_rows = [], []
 
     for m in pd.period_range(first, last, freq="M"):
@@ -51,10 +53,10 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
         if rules is None:
             x, diag = BENCH.copy(), {}
         elif rules == "mvo":
-            x, diag = propose_mvo(m, inputs, x_prev=w, max_turnover=max_turnover)
+            x, diag = propose_mvo(m, inputs, x_prev=w, max_turnover=max_turnover, te=te, cost=penalty)
         else:
-            x, diag = propose_portfolio(m, inputs, x_prev=w, rules=rules,
-                                        confidence=confidence, max_turnover=max_turnover)
+            x, diag = propose_portfolio(m, inputs, x_prev=w, rules=rules, confidence=confidence,
+                                        max_turnover=max_turnover, te=te, cost=penalty)
 
         # 2) Hold through month m+1; trade at the close of its first session
         sessions = rets.loc[month_ends[m]:month_ends[m + 1]].iloc[1:]
