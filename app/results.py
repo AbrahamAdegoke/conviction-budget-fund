@@ -73,7 +73,7 @@ with tab4:
     fig.update_layout(barmode="group", bargap=0.3, bargroupgap=0.08)
     st.plotly_chart(common.style(fig, "Realized tracking error by calendar year", ".1%", height=420),
                     width="stretch")
-    st.caption("Measured on daily returns. Year by year it can exceed the budget, mostly in stress years.")
+    st.caption("Measured on daily returns, which overstate the monthly risk a little (see below).")
 
 # Tracking error by asset block: where the risk model is right, and where it underestimates the risk.
 blocks, variants = common.extra_results()
