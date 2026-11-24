@@ -35,9 +35,12 @@ def cagr(r):
 
 
 def max_drawdown(r):
-    """Largest peak-to-trough fall of the cumulative value (positive number)."""
+    """Largest peak-to-trough fall of the cumulative value (positive number), starting from a value of 1.
+
+    The starting capital counts as a peak, so a loss before the value first rises is a drawdown too.
+    """
     nav = (1 + r).cumprod()
-    return float(-(nav / nav.cummax() - 1).min())
+    return float(-(nav / nav.cummax().clip(lower=1.0) - 1).min())
 
 
 def expected_shortfall(r, level=ES_LEVEL):

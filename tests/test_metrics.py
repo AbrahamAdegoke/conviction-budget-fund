@@ -85,3 +85,7 @@ def test_te_by_block_is_consistent():
     blocks = t.drop(index="Total")
     assert np.isclose(blocks["Share of realized active variance"].sum(), 1.0)
     assert abs(t.loc["Total", "Ex-ante TE"] - 0.02) < 0.002          # the 2% budget, used almost every month
+
+
+def test_max_drawdown_counts_a_loss_from_the_start():
+    assert np.isclose(max_drawdown(pd.Series([-0.10, 0.05])), 0.10)   # 1 -> 0.90 is a 10% drawdown

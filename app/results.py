@@ -61,7 +61,8 @@ with tab2:
     st.plotly_chart(fig, width="stretch")
 with tab3:
     nav = (1 + net).cumprod()
-    st.plotly_chart(series_fig(nav / nav.cummax() - 1, "Drawdown from previous peak", ".0%", ".1%"),
+    peak = nav.cummax().clip(lower=1.0)                     # the starting capital counts as a peak
+    st.plotly_chart(series_fig(nav / peak - 1, "Drawdown from previous peak (or starting capital)", ".0%", ".1%"),
                     width="stretch")
 with tab4:
     te = yearly["Realized TE"]
