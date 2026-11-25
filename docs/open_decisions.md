@@ -101,6 +101,19 @@ Tick the box and record the choice once the team has agreed.
   turnover 1.94 → 1.60 a year. Test period 2016–2026: IR 0.14 → 0.17, +0.32% → +0.36% a year, realized TE 2.34% → 2.15%
   (daily) and 2.02% → 1.77% (monthly). A 10-point cap on every ETF, the other variant tried, was worse on both periods.
   Only 5 points was used; no other value was tried on 2016–2026.
+- **Update (25 Nov): effect once trading costs are in the objective (decision 9).** The numbers above were measured before
+  the cost penalty. With the penalty, the cap still helps on the calibration period but costs on the test period
+  (full mandate, 5 bp):
+
+  | | 2009–2015 | 2016–2026 |
+  |---|---|---|
+  | Cost penalty, no bond cap | +0.63% a year, IR 0.32 | +0.70% a year, IR 0.30 |
+  | Cost penalty and bond cap (current model) | +0.83% a year, IR 0.42 | +0.49% a year, IR 0.22 |
+
+  The cap is kept: method choices are made on 2009–2015, where it helps, and it keeps the realized bond risk in line
+  with the forecast (realized / ex-ante TE of the bond block 0.95, vs 1.24 without the cap) and the monthly realized TE
+  lower (1.84% vs 1.93% on 2016–2026). The −0.21% a year on 2016–2026 is the out-of-sample result and is reported as
+  such; dropping the cap now would mean choosing the model on the test period.
 
 ### 8. Backtest inputs to the optimizer
 - **Who:** Assia

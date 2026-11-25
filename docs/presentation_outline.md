@@ -43,7 +43,7 @@ Where to read more: `docs/open_decisions.md` (item number in brackets).
 - *Look-ahead?* Momentum skips the last month, the trend uses the close of the decision day, trades happen the next session; tests shock future data and check nothing changes.
 
 **Choices added after the first backtest**
-- *Why limit each bond ETF to ±5 points?* IEF, LQD and TLT are ~0.86 correlated, so large swaps look almost free in tracking error, exactly where the covariance is least reliable (LN3 "error maximisation"). Their realized risk was 1.24× the forecast without the limit, 0.95× with it. IR 0.15 → 0.30 on 2009–2015, 0.14 → 0.17 on 2016–2026 [7].
+- *Why limit each bond ETF to ±5 points?* IEF, LQD and TLT are ~0.86 correlated, so large swaps look almost free in tracking error, exactly where the covariance is least reliable (LN3 "error maximisation"). Their realized risk was 1.24× the forecast without the limit, 0.95× with it. With trading costs in the objective, the limit helps on 2009–2015 (IR 0.32 → 0.42), where we make our method choices, but costs 0.21% a year on 2016–2026 (IR 0.30 → 0.22). We kept it and report the test result as it is: removing it now would mean choosing the model on the test period [7].
 - *Why costs in the objective, and why 3 months?* A trade is made only if its expected gain pays its cost. On 2009–2015 the direction of α keeps 88% / 62% / 29% of its content after 1 / 3 / 6 months, so a trade earns over a few months; 3 is the cautious choice. Turnover halves; at 25 bp the fund stays positive [9].
 - *What if no portfolio meets the rules?* The turnover cap is relaxed in ×1.25 steps (needed once: March 2020, TE-only portfolio; never for the fund); if still impossible, the fund holds the benchmark. Never happened [6].
 
