@@ -4,8 +4,8 @@ Problem (LN2 sigma-problem, active weights a = x - b):
     max  alpha' a
     s.t. 1'x = 1,  a' Sigma a <= TE^2,  mandate rules (G x <= h),
          optional LN3 turnover cap sum|x - x_prev| <= cap (Scherer split x = x_prev + u+ - u-).
-Priority when infeasible: mandate and TE are hard; the turnover cap is relaxed to the smallest feasible
-value (bisection) and flagged. If no valid portfolio is found at all, the fund holds the benchmark
+Priority when infeasible: mandate and TE are hard; the turnover cap is relaxed in x1.25 steps and
+flagged. If no valid portfolio is found at all, the fund holds the benchmark
 (diagnostics flag 'fallback_to_benchmark').
 
 Entry point for the backtest and the app: propose_portfolio(month, inputs, x_prev, rules, ...).
@@ -27,7 +27,7 @@ BENCH = pd.Series(config.BENCHMARK)[TICKERS]
 EQUITY, BONDS = config.ASSET_CLASSES["Equities"], config.ASSET_CLASSES["Bonds"]
 RULES = ("full", "long_only", "none")
 MAX_TWO_WAY_TURNOVER = 2.0      # selling everything and buying a new portfolio: sum|x - x_prev| <= 2
-RELAX_TOL = 1e-4                # precision of the relaxed turnover cap (0.01 percentage point)
+RELAX_STEP = 1.25               # if infeasible, the turnover cap is multiplied by 1.25 until a solution exists
 
 
 # Mandate: write the fund's rules (long-only, bond range, EEM share of equities, 40% cap per ETF)
@@ -135,29 +135,19 @@ def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=No
 
 def propose_weights(alpha, Sigma, rules="full", x_prev=None, max_turnover=config.MAX_TURNOVER,
                     te=config.TE_TARGET, cost=0.0):
-    """Optimize; if the turnover cap makes it infeasible, relax it only as far as needed.
+    """Optimize; if the turnover cap makes it infeasible, relax the cap in x1.25 steps until feasible.
 
-    The mandate and the TE budget are hard constraints. When they cannot be met within the turnover cap,
-    the smallest feasible cap is found by bisection between the cap and 2.0 (the maximum two-way
-    turnover), to within RELAX_TOL. Returns (weights, ok, relaxed_cap or None).
+    The mandate and the TE budget are hard constraints. The steps can go past the smallest feasible cap
+    (in 2020-03, TE-only portfolio: 31.25% instead of 30.5%). Returns (weights, ok, relaxed_cap or None).
     """
     cap = max_turnover if x_prev is not None else None
     x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap, cost=cost)
-    if ok or cap is None:
-        return x, ok, None
-    hi = MAX_TWO_WAY_TURNOVER
-    x_hi, ok_hi = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=hi, cost=cost)
-    if not ok_hi:                                             # infeasible even with no cap at all
-        return x_hi, False, hi
-    lo = cap
-    while hi - lo > RELAX_TOL:
-        mid = (lo + hi) / 2
-        x_mid, ok_mid = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=mid, cost=cost)
-        if ok_mid:
-            hi, x_hi = mid, x_mid
-        else:
-            lo = mid
-    return x_hi, True, hi
+    relaxed = None
+    while not ok and cap is not None and cap < MAX_TWO_WAY_TURNOVER:
+        cap = min(cap * RELAX_STEP, MAX_TWO_WAY_TURNOVER)
+        relaxed = cap
+        x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap, cost=cost)
+    return x, ok, relaxed
 
 
 # Entry point: one call that gives the proposed portfolio for a month. The backtest and the

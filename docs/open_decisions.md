@@ -77,12 +77,12 @@ Tick the box and record the choice once the team has agreed.
 
 ### 6. When the turnover cap makes the problem infeasible
 - **Who:** whole team
-- **Implemented:** the mandate and TE ≤ 2% are hard constraints; the cap is relaxed to the smallest feasible value, found by bisection (precision 0.01 percentage point), and flagged in `diag["relaxed_turnover_cap"]`.
-- **Where it happens:** only 2020-03. After the COVID volatility jump, last month's portfolio had an ex-ante TE of 4.9%; with 20% turnover the best reachable TE was 2.25%. In the daily backtest the cap is relaxed to 25.1% (full mandate) and 33.2% (TE budget only).
-- **Update (24 Nov):** the first version relaxed the cap in ×1.25 steps, which overshot the minimum (31.25% and 39.1%, and the optimizer traded 34.3% and 39.8%); the 25% quoted here came from the notebook's monthly approximation. Bisection now keeps the promise "relax only as far as needed". Effect on the 2016–2026 backtest: active return of the full mandate +0.30% → +0.32% a year (IR 0.13 → 0.14); 2009–2015 unchanged (no relaxation).
+- **Implemented:** the mandate and TE ≤ 2% are hard constraints; the cap is multiplied by 1.25 until a solution exists (25%, 31.25%, 39.06%, …) and flagged in `diag["relaxed_turnover_cap"]`. The steps can go past the smallest feasible cap: a simple, predictable rule rather than an exact minimum.
+- **Where it happens:** only 2020-03, and only for the TE-budget-only portfolio. After the COVID volatility jump, last month's holdings had an ex-ante TE of about 5% under the new covariance, so more than 20% had to be traded to come back to 2%: the cap goes to 31.25% (smallest feasible cap 30.5%). The full-mandate fund never needs it on 2009–2015 or 2016–2026 (the cost penalty and the bond limits keep it closer to its previous holdings).
+- **Update (25 Nov):** a bisection to the smallest feasible cap was tried on 24 Nov and removed on 25 Nov. In the final model it changes nothing for the fund and 0.76 point of turnover in one month for the TE-only portfolio (IR 0.360 vs 0.363), so the simpler ×1.25 rule is kept.
 - **Alternative:** keep the cap and accept 2.25% TE for that month.
 - **Recommendation:** current rule. The TE budget is the fund's main promise; the cap is an optional extra from the plan.
-- **Decision (14 Nov):** [X] relax the cap (current)  [ ] keep the cap, allow TE > 2%. In the backtest it happens only in 2020-03 (both BL portfolios), flagged in `monthly_log.csv`.
+- **Decision (14 Nov):** [X] relax the cap (current)  [ ] keep the cap, allow TE > 2%. In the backtest it happens only in 2020-03 (TE-budget-only portfolio), flagged in `monthly_log.csv`.
 
 ### 7. Large swaps inside the bond block
 - **Who:** Mustafa, after Assia's first backtest

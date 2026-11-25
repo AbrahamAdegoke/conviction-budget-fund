@@ -19,9 +19,9 @@ One message throughout: **a disciplined use of a small, controlled active-risk b
 
 | | Full mandate | TE budget only | Naive MVO |
 |---|---|---|---|
-| Active return | +0.49% | +0.83% | +0.86% |
+| Active return | +0.49% | +0.82% | +0.86% |
 | Information ratio | 0.22 | 0.36 | 0.36 |
-| Realized TE, monthly / daily | 1.84% / 2.18% | 1.99% / 2.29% | 2.02% / 2.35% |
+| Realized TE, monthly / daily | 1.84% / 2.18% | 1.98% / 2.29% | 2.02% / 2.35% |
 | Jensen alpha (t, Newey-West) | +0.44% (0.83) | +0.84% (1.41) | +0.85% (1.31) |
 | Turnover / cost per year | 0.99 / 0.05% | 1.05 / 0.05% | 1.58 / 0.08% |
 | IR on 2009–2015 (calibration) | 0.42 | 0.27 | 0.63 |
@@ -45,7 +45,7 @@ Where to read more: `docs/open_decisions.md` (item number in brackets).
 **Choices added after the first backtest**
 - *Why limit each bond ETF to ±5 points?* IEF, LQD and TLT are ~0.86 correlated, so large swaps look almost free in tracking error, exactly where the covariance is least reliable (LN3 "error maximisation"). Their realized risk was 1.24× the forecast without the limit, 0.95× with it. IR 0.15 → 0.30 on 2009–2015, 0.14 → 0.17 on 2016–2026 [7].
 - *Why costs in the objective, and why 3 months?* A trade is made only if its expected gain pays its cost. On 2009–2015 the direction of α keeps 88% / 62% / 29% of its content after 1 / 3 / 6 months, so a trade earns over a few months; 3 is the cautious choice. Turnover halves; at 25 bp the fund stays positive [9].
-- *What if no portfolio meets the rules?* The turnover cap is relaxed only as far as needed (bisection); if still impossible, the fund holds the benchmark. Never happened [6].
+- *What if no portfolio meets the rules?* The turnover cap is relaxed in ×1.25 steps (needed once: March 2020, TE-only portfolio; never for the fund); if still impossible, the fund holds the benchmark. Never happened [6].
 
 **Results**
 - *Realized TE above 2%?* Monthly 1.84%, within budget. Daily active returns partly cancel within a month, so √252 × daily overstates the monthly risk. Measured daily, it exceeds 2% in 6 of 11 years, most in 2018 (2.8%) and 2026 (3.0%).
@@ -53,6 +53,6 @@ Where to read more: `docs/open_decisions.md` (item number in brackets).
 - *So is it luck?* Not only: with every view reversed the fund loses about what it gains (−0.82% vs +0.83% a year on 2009–2015, −0.75% vs +0.49% on 2016–2026). The views carry information; the sample is too short to prove it statistically (`scripts/sensitivity_k_ratio.py`).
 - *Is the portfolio concentrated?* SPY sits at its 40% cap in 34% of months and bonds at their 25% floor in 20%: the rules bind often, which is why they have a measurable price.
 - *The naive MVO does as well: why use Black-Litterman?* The past-year average return is itself a momentum signal on all 8 ETFs. BL gives controlled, explainable bets and trades less (0.99 vs 1.58 a year).
-- *What do the rules cost?* −0.34% a year on 2016–2026 but +0.31% on 2009–2015: they protect in some markets only.
+- *What do the rules cost?* −0.33% a year on 2016–2026 but +0.31% on 2009–2015: they protect in some markets only.
 - *What would you change next?* The trend view dilutes the momentum views (IR 0.50 with a neutral trend view vs 0.22); we did not change it because that would be tuning on the test period [10]. Also: one K per asset class, and the real-estate vs gold risk.
 - *Data?* Refinitiv Datastream total return indices (licensed, raw file not in the repository), NYSE calendar, quality report in `data/reports/`.

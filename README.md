@@ -57,9 +57,9 @@ All method choices and their evidence: [`docs/open_decisions.md`](docs/open_deci
 
 | | Benchmark | BL, TE budget only | BL, full mandate | Naive MVO |
 |---|---|---|---|---|
-| Return (CAGR) | 8.17% | 9.02% | 8.64% | 9.07% |
-| Active return | – | 0.83% | 0.49% | 0.86% |
-| Realized TE, daily / monthly | – | 2.29% / 1.99% | 2.18% / 1.84% | 2.35% / 2.02% |
+| Return (CAGR) | 8.17% | 9.01% | 8.64% | 9.07% |
+| Active return | – | 0.82% | 0.49% | 0.86% |
+| Realized TE, daily / monthly | – | 2.29% / 1.98% | 2.18% / 1.84% | 2.35% / 2.02% |
 | Information ratio | – | 0.36 | 0.22 | 0.36 |
 | Jensen's alpha (t, Newey-West) | – | 0.84% (1.41) | 0.44% (0.83) | 0.85% (1.31) |
 | Turnover (two-way, per year) | 0.26 | 1.05 | 0.99 | 1.58 |
@@ -74,7 +74,7 @@ Full tables: `data/results/metrics.csv`, `te_by_block.csv` (ex-ante vs realized 
 and `variants.csv` (both periods; TE 1% or 3%, costs 0 or 25 bp, one at a time; `python -m src.variants`).
 
 Calibration period 2009–2015 (same model): IR 0.42 for the full mandate, 0.27 for the TE budget only, 0.63 for the
-naive MVO. The price of the rules changes sign between periods (+0.31% a year on 2009–2015, −0.34% on
+naive MVO. The price of the rules changes sign between periods (+0.31% a year on 2009–2015, −0.33% on
 2016–2026), and the naive MVO beats Black-Litterman on both.
 
 ## Repository
