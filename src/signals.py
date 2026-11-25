@@ -1,23 +1,20 @@
 """Automatic signals and Black-Litterman views for the Conviction Budget Fund.
 
 Moved from notebooks/01_data_audit.ipynb (cells 8 and 10) so that the views used by the backtest and the app
-come from tested code. Conventions:
+come from tested code.
 - Momentum 12-1 at month-end t: RI(t-1) / RI(t-12) - 1. Month t is skipped, so it uses data up to month-end t-1.
 - Trend at month-end t: SPY price / its 200-session moving average - 1, using prices up to the close of t.
 - Weights decided at month-end t are traded on the next session and earn the returns of month t+1.
 - Views are equilibrium-relative (see src/black_litterman.py): Q is the spread the signal adds on top of the
   spread the benchmark already implies.
 """
-
 import numpy as np
 import pandas as pd
 
 from . import config
 from .data import TICKERS
 
-
-# Month-end values: read a daily series on the last NYSE session of each month. A missing month-end stays
-# NaN, and the incomplete final month (data ending before its last session) is dropped.
+# Month-end values: read a daily series on the last NYSE session of each month. A missing month-end stays NaN, and the incomplete final month (data ending before its last session) is dropped.
 def at_month_ends(daily, month_ends, incomplete_final=None):
     """Values of a daily Series/DataFrame at each month-end session, indexed by month (Period)."""
     me = month_ends if incomplete_final is None else month_ends.drop(index=incomplete_final.index)
@@ -70,8 +67,7 @@ def calibrate_k(momentum, trend, cap=config.VIEW_CAP, target=config.CAP_TARGET_S
     return cap / q_mom, cap / q_trend
 
 
-# Views: each month, 3 momentum views (best beats worst ETF in each asset class) and 1 trend view
-# (equities vs bonds, weighted like the benchmark). Q = K x signal, capped at 5% a year.
+# Views: each month, 3 momentum views (best beats worst ETF in each asset class) and 1 trend view equities vs bonds, weighted like the benchmark). Q = K x signal, capped at 5% a year.
 def build_views(momentum, trend, k_mom=config.K_MOM, k_trend=config.K_TREND, cap=config.VIEW_CAP):
     """One row per view: Month, View, one P column per ticker, Q (annual, decimal)."""
     bench = pd.Series(config.BENCHMARK)

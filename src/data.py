@@ -1,14 +1,10 @@
-"""Data loading, cleaning and return construction for the Conviction Budget Fund.
-
-Protocol: Data Audit & Cleaning V1.4.
-- Raw files are never modified.
-- Only NYSE sessions are kept.
-- Prices are never interpolated or forward-filled.
-- Returns are simple returns computed from the Total Return Index (RI).
-- Monthly returns use a common NYSE month-end; a missing month-end makes
-  that month's and the next month's returns unavailable (NaN).
+"""Data loading, cleaning and return construction:
+- Raw files are never modified
+- Only NYSE sessions are kept
+- Prices are never interpolated or forward-filled
+- Returns are simple returns computed from the Total Return Index (RI)
+- Monthly returns use a common NYSE month-end; a missing month-end makes that month's and the next month's returns unavailable (NaN)
 """
-
 from pathlib import Path
 
 import pandas as pd
@@ -23,8 +19,7 @@ REPORTS_DIR = PROJECT_ROOT / "data" / "reports"
 PRICE_SHEET = "Price"
 RI_SHEET = "Total return index"
 
-# Each ETF is identified by a keyword in its Datastream name
-# (column order differs between the Price and RI sheets).
+# Each ETF is identified by a keyword in its Datastream name (the column order differs between the two sheets)
 TICKER_KEYWORDS = {
     "SPY": "S&P 500",
     "EFA": "EAFE",
@@ -37,11 +32,12 @@ TICKER_KEYWORDS = {
 }
 TICKERS = list(TICKER_KEYWORDS)
 
-
-# Loading: read the raw Datastream workbook and the FRED risk-free rate. Problems found
-# (bad dates, duplicates, non-numeric cells) are counted and reported, never silently fixed.
+# Loading: read the raw Datastream workbook and the FRED risk-free rate.
+# Problems found are counted in an audit dict, never silently fixed: a duplicated date stops the pipeline,
+# a bad date drops its row, a non-numeric cell becomes missing and its session is excluded later.
 def map_columns_to_tickers(columns):
     """Map Datastream column names to tickers; fail on ambiguous or missing ETFs."""
+
     mapping = {}
     for col in columns:
         matches = [t for t, kw in TICKER_KEYWORDS.items() if kw in str(col).upper()]
@@ -54,10 +50,8 @@ def map_columns_to_tickers(columns):
 
 
 def load_datastream_sheet(sheet, path=ETF_FILE):
-    """Read one Datastream sheet: Date index, one numeric column per ticker.
-
-    Returns the cleaned frame and a dict of audit counts
-    (invalid dates, duplicated dates, non-numeric values per ticker).
+    """Read one Datastream sheet: Date index, one numeric column per ticker
+    Returns the cleaned frame and a dict of audit counts (invalid dates, duplicated dates, non-numeric values per ticker)
     """
     df = pd.read_excel(path, sheet_name=sheet, header=0)
     df = df.rename(columns={df.columns[0]: "Date"})
