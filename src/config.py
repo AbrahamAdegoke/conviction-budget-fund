@@ -23,7 +23,7 @@ COV_WINDOW = 252                # trailing regular daily returns for the covaria
 ANNUALIZATION = 252
 DEFAULT_CONFIDENCE = 0.50       # Idzorek confidence of the automatic views
 BENCHMARK_SR = 0.40             # Only used to DISPLAY implied returns: it cancels out of alpha, so the weights do not depend on it
-                                # A cautious long-run assumption for a 50/35/15 portfolio (historical: 0.88 on 2009-2015, a bull market; 0.60 on 2016-2026)
+                                # A cautious long-run assumption for a 50/35/15 portfolio (historical: 0.87 on 2009-2015, a bull market; 0.59 on 2016-2026)
 
 # Trading costs
 TRADING_COST_BP = 5.0           # cost on traded notional, in basis points (backtest and optimizer)

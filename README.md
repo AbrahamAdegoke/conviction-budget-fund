@@ -51,7 +51,7 @@ To rebuild the backtest results after a change:
 | Backtest | Signal at month-end close, trade at the next close, 5 bp on traded notional, daily drift; benchmark rebalanced monthly at no cost |
 | Portfolios | Benchmark · BL with TE budget only (long-only) · BL under full mandate · naive MVO (past-year average returns instead of BL alpha, full mandate) |
 
-All method choices and their evidence: [`docs/open_decisions.md`](docs/open_decisions.md).
+Every method choice and why: [`docs/methodology.md`](docs/methodology.md).
 
 ## Results (Jan 2016 – Oct 2026, net of 5 bp costs)
 
@@ -95,7 +95,7 @@ scripts/              sensitivity_k_ratio.py: sensitivity of the results to the 
 tests/                pytest suite
 data/processed/       clean returns, signals, views
 data/results/         backtest output used by the app
-docs/                 project plan, data log, optimizer interface, decisions
+docs/                 methodology (choices and why), presentation script
 ```
 
 ## Data

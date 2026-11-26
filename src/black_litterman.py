@@ -1,4 +1,4 @@
-"""Covariance and Black-Litterman views for the Conviction Budget Fund (Person B).
+"""Covariance and Black-Litterman views for the Conviction Budget Fund.
 
 Conventions (see notebooks/02_bl_optimizer.ipynb):
 - Covariance at decision month t: Ledoit-Wolf (2003) shrinkage to constant correlation (LN3) on the

@@ -1,4 +1,4 @@
-"""Performance metrics for the backtest (Person C, plan task 8).
+"""Performance metrics for the backtest.
 
 Inputs: the saved backtest (src/backtest.py), daily simple returns net and gross of the 5 bp cost.
 Conventions:

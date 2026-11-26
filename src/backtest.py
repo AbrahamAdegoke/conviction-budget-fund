@@ -1,6 +1,6 @@
-"""Monthly walk-forward backtest for the Conviction Budget Fund (Person C, plan task 7).
+"""Monthly walk-forward backtest for the Conviction Budget Fund.
 
-Timing (agreed 14 Nov, docs/open_decisions.md):
+Timing (see docs/methodology.md, section 7):
 - Decision at the close of month-end t, using only data up to that close (propose_portfolio).
 - Trade at the close of the first session of month t+1: that session is still earned by the old,
   drifted weights, then the portfolio is rebalanced to the target.
@@ -10,7 +10,7 @@ Timing (agreed 14 Nov, docs/open_decisions.md):
   The benchmark is rebalanced to its fixed weights at no cost (it is the reference index).
 - First decision (2015-12) starts from the benchmark weights.
 
-Simulated with daily returns so the next-day trade is exact and task 8 can compute realized TE,
+Simulated with daily returns so the next-day trade is exact and the metrics can use realized TE,
 drawdown and ES from daily data.
 """
 
@@ -85,7 +85,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
 
 
 def run_all(save=True, **kwargs):
-    """Run the four portfolios of the plan and save the results for task 8 and the app (offline)."""
+    """Run the four portfolios of the plan and save the results for the metrics and the app (offline)."""
     inputs = load_inputs()
     daily, monthly = {}, {}
     for name, rules in PORTFOLIOS.items():

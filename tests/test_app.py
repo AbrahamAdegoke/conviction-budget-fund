@@ -1,4 +1,4 @@
-"""Smoke tests for the Streamlit app (plan task 9): every page runs offline without errors."""
+"""Smoke tests for the Streamlit app: every page runs offline without errors."""
 
 from pathlib import Path
 

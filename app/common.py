@@ -1,4 +1,4 @@
-"""Shared state and cached loaders for the Streamlit app (plan task 9). Everything reads data/ (offline)."""
+"""Shared state and cached loaders for the Streamlit app. Everything reads data/ (offline)."""
 
 import pandas as pd
 import streamlit as st

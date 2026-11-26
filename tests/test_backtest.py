@@ -1,4 +1,4 @@
-"""Checks for the walk-forward backtest (plan task 7). Short sample (2016) to keep them fast."""
+"""Checks for the walk-forward backtest. Short sample (2016) to keep them fast."""
 
 import numpy as np
 import pandas as pd

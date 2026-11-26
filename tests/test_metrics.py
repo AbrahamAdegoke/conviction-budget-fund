@@ -1,4 +1,4 @@
-"""Checks for the performance metrics (plan task 8): known answers on small synthetic series."""
+"""Checks for the performance metrics: known answers on small synthetic series."""
 
 import numpy as np
 import pandas as pd

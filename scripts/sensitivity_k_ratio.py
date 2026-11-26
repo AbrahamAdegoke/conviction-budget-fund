@@ -1,4 +1,4 @@
-"""Sensitivity checks on the size of the automatic views (docs/open_decisions.md, item 10).
+"""Sensitivity checks on the size of the automatic views (docs/methodology.md, section 9).
 
 1. Weight of the trend view vs the momentum views: the views are rebuilt from the exported signals with
    K_TREND multiplied by 0, 0.5, 1 and 2 (K_MOM unchanged), and the full-mandate fund is backtested on the

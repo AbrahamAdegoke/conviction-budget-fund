@@ -28,31 +28,31 @@ One message throughout: **a disciplined use of a small, controlled active-risk b
 
 ## Likely questions, short answers
 
-Where to read more: `docs/open_decisions.md` (item number in brackets).
+Every choice and its evidence: `docs/methodology.md`.
 
 **Model**
 - *Why this benchmark?* It is the client's mandate (a balanced 50% equities / 35% bonds / 15% real estate and gold); we take it as given and measure the value added against it. It also sets the prior: π = φΣb.
-- *Why "views on top of equilibrium"?* It is LN4 with Q = Pμ̃ + κ·signal. Read as total returns, the trend view pushed against its own signal in 52% of months; on top of equilibrium, in 11% [2].
+- *Why "views on top of equilibrium"?* It is LN4 with Q = Pμ̃ + κ·signal. The benchmark already implies large spreads: in 2026-10 equities beat bonds by 3.90%, the trend signal gives +1.44%. Read as a total spread, a positive trend signal would push towards bonds; on top of equilibrium, every view pushes in the direction of its signal.
 - *Where is τ?* Ω is proportional to τ (Idzorek confidence, Walters form), so τ cancels. We hit the TE budget with the LN2 sigma-problem, not by tuning τ as in the LN4 lab.
 - *γ-problem or σ-problem?* Same weights when the budget binds (checked to 2e-7); we solve the σ version.
 - *Why maximize α = μ̄ − π and not μ̄?* π'(x − b) = φσ_b²(β_x − 1): maximizing x'μ̄ would buy beta with no view at all.
-- *Why does confidence barely matter?* Only the direction of α matters and the budget is always fully used [4].
+- *Why does confidence barely matter?* Only the direction of α matters and the budget is always fully used.
 - *How is the view size K set?* So that the 5% cap binds about 10% of the time on 2009–2015 only (K = 0.16 and 0.39); a test checks it.
-- *Benchmark Sharpe 0.40?* Only used to display the implied spreads; it cancels out of the weights. A cautious long-run assumption (historical 0.88 on 2009–2015, 0.60 on 2016–2026).
+- *Benchmark Sharpe 0.40?* Only used to display the implied spreads; it cancels out of the weights. A cautious long-run assumption (historical 0.87 on 2009–2015, 0.59 on 2016–2026).
 - *Why "best minus worst" and 12-1 momentum?* Simple and robust: one view per asset class, the middle ETF is ignored; the alternatives view (two ETFs) exists every month, even for a tiny spread. Skipping the last month comes from stock-level reversal; for asset-class ETFs it is a convention more than a necessity.
 - *Look-ahead?* Momentum skips the last month, the trend uses the close of the decision day, trades happen the next session; tests shock future data and check nothing changes.
 
 **Choices added after the first backtest**
-- *Why limit each bond ETF to ±5 points?* IEF, LQD and TLT are ~0.86 correlated, so large swaps look almost free in tracking error, exactly where the covariance is least reliable (LN3 "error maximisation"). Their realized risk was 1.24× the forecast without the limit, 0.95× with it. With trading costs in the objective, the limit helps on 2009–2015 (IR 0.32 → 0.42), where we make our method choices, but costs 0.21% a year on 2016–2026 (IR 0.30 → 0.22). We kept it and report the test result as it is: removing it now would mean choosing the model on the test period [7].
-- *Why costs in the objective, and why 3 months?* A trade is made only if its expected gain pays its cost. On 2009–2015 the direction of α keeps 88% / 62% / 29% of its content after 1 / 3 / 6 months, so a trade earns over a few months; 3 is the cautious choice. Turnover halves; at 25 bp the fund stays positive [9].
-- *What if no portfolio meets the rules?* The turnover cap is relaxed in ×1.25 steps (needed once: March 2020, TE-only portfolio; never for the fund); if still impossible, the fund holds the benchmark. Never happened [6].
+- *Why limit each bond ETF to ±5 points?* IEF, LQD and TLT are ~0.86 correlated, so large swaps look almost free in tracking error, exactly where the covariance is least reliable (LN3 "error maximisation"). Their realized risk was 1.24× the forecast without the limit, 0.95× with it. With trading costs in the objective, the limit helps on 2009–2015 (IR 0.32 → 0.42), where we make our method choices, but costs 0.21% a year on 2016–2026 (IR 0.30 → 0.22). We kept it and report the test result as it is: removing it now would mean choosing the model on the test period.
+- *Why costs in the objective, and why 3 months?* A trade is made only if its expected gain pays its cost. On 2009–2015 the direction of α keeps 88% / 62% / 29% of its content after 1 / 3 / 6 months, so a trade earns over a few months; 3 is the cautious choice. Turnover halves; at 25 bp the fund stays positive.
+- *What if no portfolio meets the rules?* The turnover cap is relaxed in ×1.25 steps (needed once: March 2020, TE-only portfolio; never for the fund); if still impossible, the fund holds the benchmark. Never happened.
 
 **Results**
 - *Realized TE above 2%?* Monthly 1.84%, within budget. Daily active returns partly cancel within a month, so √252 × daily overstates the monthly risk. Measured daily, it exceeds 2% in 6 of 11 years, most in 2018 (2.8%) and 2026 (3.0%).
 - *Is the alpha significant?* No: Jensen t-stat 0.83. With an IR of 0.22, about 80 years of data would be needed for t = 2.
 - *So is it luck?* Not only: with every view reversed the fund loses about what it gains (−0.82% vs +0.83% a year on 2009–2015, −0.75% vs +0.49% on 2016–2026). The views carry information; the sample is too short to prove it statistically (`scripts/sensitivity_k_ratio.py`).
-- *Is the portfolio concentrated?* SPY sits at its 40% cap in 34% of months and bonds at their 25% floor in 20%: the rules bind often, which is why they have a measurable price.
+- *Is the portfolio concentrated?* SPY sits at its 40% cap in 35% of months and bonds at their 25% floor in 21%: the rules bind often, which is why they have a measurable price.
 - *The naive MVO does as well: why use Black-Litterman?* The past-year average return is itself a momentum signal on all 8 ETFs. BL gives controlled, explainable bets and trades less (0.99 vs 1.58 a year).
 - *What do the rules cost?* −0.33% a year on 2016–2026 but +0.31% on 2009–2015: they protect in some markets only.
-- *What would you change next?* The trend view dilutes the momentum views (IR 0.50 with a neutral trend view vs 0.22); we did not change it because that would be tuning on the test period [10]. Also: one K per asset class, and the real-estate vs gold risk.
+- *What would you change next?* The trend view dilutes the momentum views (IR 0.50 with a neutral trend view vs 0.22); we did not change it because that would be tuning on the test period. Also: one K per asset class, and the real-estate vs gold risk.
 - *Data?* Refinitiv Datastream total return indices (licensed, raw file not in the repository), NYSE calendar, quality report in `data/reports/`.

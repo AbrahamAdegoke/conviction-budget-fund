@@ -1,4 +1,4 @@
-"""Constrained optimizer and rule checks for the Conviction Budget Fund (Person B).
+"""Constrained optimizer and rule checks for the Conviction Budget Fund.
 
 Problem (LN2 sigma-problem, active weights a = x - b):
     max  alpha' a
