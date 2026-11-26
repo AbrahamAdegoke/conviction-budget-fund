@@ -39,14 +39,16 @@ st.markdown(
     f"budget**, our *conviction budget*) and spend it on our best ideas, never more.")
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Extra return vs benchmark, a year", f"{full['Active return (net)']:+.2%}", border=True,
-          delta="net of trading costs", delta_color="off")
+c1.metric("Extra return a year", f"{full['Active return (net)']:+.2%}", border=True,
+          delta="net of trading costs", delta_color="off",
+          help="Return of the full-mandate fund minus the benchmark's, a year, net of the 5 bp trading cost.")
 c2.metric("Sharpe ratio", f"{full['Sharpe']:.2f}", border=True,
           delta=f"benchmark {bench['Sharpe']:.2f}", delta_color="off")
 c3.metric("Max drawdown", common.pct(full["Max drawdown"], 1), border=True,
           delta=f"benchmark {common.pct(bench['Max drawdown'], 1)}", delta_color="off")
-c4.metric("Years ahead of the benchmark", f"{years_up} of {n_years}", border=True,
-          delta=f"{net.index[0]:%Y}–{net.index[-1]:%Y} (to {net.index[-1]:%b})", delta_color="off")
+c4.metric("Years ahead", f"{years_up} of {n_years}", border=True,
+          delta=f"{net.index[0]:%Y}–{net.index[-1]:%Y} (to {net.index[-1]:%b})", delta_color="off",
+          help="Calendar years in which the full-mandate fund beat the benchmark, net of costs.")
 
 st.divider()
 
@@ -68,7 +70,7 @@ steps = [
                            "uses data available at the time."),
 ]
 for col, (title, text) in zip(st.columns(4), steps):
-    with col.container(border=True, height=340):
+    with col.container(border=True):
         st.markdown(f"**{title}**")
         st.markdown(text)
 

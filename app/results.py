@@ -23,14 +23,18 @@ st.caption(f"Walk-forward backtest {net.index[0]:%d %b %Y} – {net.index[-1]:%d
 # Headline metrics: did the views add value after costs, and was the risk budget respected?
 full, te_only = metrics.loc["bl_full"], metrics.loc["bl_te_only"]
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Active return, full mandate (net)", common.pct(full["Active return (net)"]), border=True,
-          delta=f"TE budget only: {te_only['Active return (net)']:+.2%}", delta_color="off")
-c2.metric("Realized tracking error, monthly", common.pct(full["Realized TE (monthly)"]), border=True,
-          delta=f"Budget {config.TE_TARGET:.0%} · daily {common.pct(full['Realized TE'])}", delta_color="off",
-          help="Measured on monthly returns, the horizon at which the fund is reviewed. Measured on daily returns "
-               "it is a little higher, because daily differences partly cancel within a month.")
+c1.metric("Active return (net)", common.pct(full["Active return (net)"]), border=True,
+          delta=f"TE only: {te_only['Active return (net)']:+.2%}", delta_color="off",
+          help="Full mandate, a year, net of the 5 bp trading cost. Below: the portfolio with the TE budget only.")
+c2.metric("Realized TE, monthly", common.pct(full["Realized TE (monthly)"]), border=True,
+          delta=f"daily: {common.pct(full['Realized TE'])}", delta_color="off",
+          help=f"Budget: {config.TE_TARGET:.0%} ex ante. Measured on monthly returns, the horizon at which the fund "
+               "is reviewed. Measured on daily returns it is a little higher, because daily differences partly "
+               "cancel within a month.")
 c3.metric("Information ratio", f"{full['Information ratio']:.2f}", border=True,
-          delta=f"Jensen alpha t-stat {full['t-stat Jensen alpha (Newey-West)']:.2f}", delta_color="off")
+          delta=f"Jensen t: {full['t-stat Jensen alpha (Newey-West)']:.2f}", delta_color="off",
+          help="Information ratio of the full mandate. Below: t-stat of Jensen's alpha (Newey-West); about 2 would "
+               "be needed to call it significant.")
 c4.metric("Cost per year", common.pct(full["Cost (per year)"]), border=True,
           delta=f"Turnover {full['Turnover (two-way, per year)']:.0%} a year", delta_color="off")
 
@@ -104,7 +108,7 @@ fmt = lambda row: row.map(lambda v: "–" if pd.isna(v) or (v == 0 and row.name 
                           (f"{v:.2f}" if row.name in ratios else f"{v:.2%}"))
 st.dataframe(show.apply(fmt, axis=1).style.apply(
                  lambda row: ["background-color: #e8f0fb" if row.name in key_rows else ""] * len(row), axis=1),
-             width="stretch", height=560)
+             width="stretch", height=560, column_config={"_index": st.column_config.Column(width=250)})
 st.caption("Annualized except drawdowns and ES (daily). Benchmark active metrics are zero by construction (–). "
            "Benchmark turnover is its monthly rebalancing, charged no cost.")
 
