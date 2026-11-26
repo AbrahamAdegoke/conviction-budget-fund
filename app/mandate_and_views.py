@@ -37,11 +37,15 @@ with right:
 - EEM ≤ **one third** of equities
 - Each ETF ≤ **{config.MAX_WEIGHT:.0%}**
 - IEF, LQD and TLT within **±{config.BOND_ACTIVE_CAP * 100:.0f} points** of their benchmark weight
-- Ex-ante tracking error ≤ **{config.TE_TARGET:.0%}** a year
+- Ex-ante tracking error ≤ **{st.session_state.te_pct:.1f}%** a year (budget, set below)
 """)
     st.radio("Rules for the proposed portfolio", list(common.RULE_SETS), key="rules_label",
              help="'TE budget only' drops the bond range, the EEM rule, the 40% cap and the bond limits, "
                   "keeping long-only.")
+    st.slider("Tracking-error budget, % a year", 0.5, 4.0, step=0.5, key="te_pct", format="%.1f%%",
+              help=f"How far the portfolio may deviate from the benchmark: the conviction budget. The fund uses "
+                   f"{config.TE_TARGET:.0%}; the backtest on the Results page is always computed at "
+                   f"{config.TE_TARGET:.0%} (1% and 3% are in its 'Other periods and settings' table).")
 
 st.divider()
 
@@ -52,7 +56,7 @@ c1, c2 = st.columns([1, 2], gap="large")
 c1.selectbox("Decision month (signal at the month-end close)", [str(m) for m in common.months()][::-1],
              key="month")
 c2.slider("Confidence in the automatic views", 0.05, 1.0, step=0.05, key="confidence", format="%.2f",
-          help="Idzorek confidence. The 2% TE budget is always fully used, so confidence changes the mix "
+          help="Idzorek confidence. The TE budget is always fully used, so confidence changes the mix "
                "of bets more than their size.")
 
 x, diag = common.current_proposal(with_manual=False)

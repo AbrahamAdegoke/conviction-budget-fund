@@ -13,6 +13,7 @@ PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only"
 
 # User choices made on "Mandate and Views", used by "Proposed Portfolio"
 DEFAULTS = {"month": None, "rules_label": "Full mandate", "confidence": config.DEFAULT_CONFIDENCE,
+            "te_pct": config.TE_TARGET * 100,                    # tracking-error budget, % a year
             "use_manual": False, "mv_long": "SPY", "mv_short": "TLT", "mv_q": 1.0, "mv_conf": 0.50}
 
 
@@ -47,10 +48,16 @@ def manual_view():
 
 
 @st.cache_data(show_spinner="Optimizing...")
-def proposal(month, rules, confidence, manual):
+def proposal(month, rules, confidence, manual, te=config.TE_TARGET):
     """Weights for the current choices. x_prev=None: a fresh portfolio, so no turnover cap."""
     mv = dict(manual) if manual else None
-    return propose_portfolio(month, inputs(), x_prev=None, rules=rules, confidence=confidence, manual_view=mv)
+    return propose_portfolio(month, inputs(), x_prev=None, rules=rules, confidence=confidence, manual_view=mv,
+                             te=te)
+
+
+def te_budget():
+    """Tracking-error budget chosen in the app (decimal, a year)."""
+    return st.session_state.te_pct / 100
 
 
 def current_proposal(with_manual=True):
@@ -59,7 +66,7 @@ def current_proposal(with_manual=True):
     mv = manual_view() if with_manual else None
     try:
         return proposal(s.month, RULE_SETS[s.rules_label], s.confidence,
-                        tuple(sorted(mv.items())) if mv else None)   # hashable for the cache
+                        tuple(sorted(mv.items())) if mv else None, te_budget())   # hashable for the cache
     except ValueError as exc:
         st.error(f"The portfolio cannot be computed with these settings: {exc}")
         st.stop()
@@ -123,5 +130,6 @@ def sidebar_summary():
     mv = manual_view()
     st.sidebar.markdown("**Current choices**")
     st.sidebar.markdown(
-        f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nView confidence: **{s.confidence:.0%}**  \n"
+        f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nTE budget: **{s.te_pct:.1f}%**  \n"
+        f"View confidence: **{s.confidence:.0%}**  \n"
         + (f"Manual view: **{mv['long']} > {mv['short']} ({s.mv_q:+.2f}%)**" if mv else "Manual view: none"))

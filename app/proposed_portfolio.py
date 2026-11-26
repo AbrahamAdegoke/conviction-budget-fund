@@ -18,7 +18,7 @@ common.init_state()
 s = st.session_state
 common.header("Proposed Portfolio", "What would the fund hold after this month's decision?")
 st.caption(f"Decision at the close of {s.month}, traded at the next session · {s.rules_label} · "
-           f"automatic views at {s.confidence:.0%} confidence"
+           f"TE budget {s.te_pct:.1f}% · automatic views at {s.confidence:.0%} confidence"
            + (f" · manual view {s.mv_long} > {s.mv_short} ({s.mv_q:+.2f}%)" if common.manual_view() else ""))
 
 x, diag = common.current_proposal()
@@ -28,7 +28,7 @@ active = (x - BENCH).mask(lambda a: a.abs() < 5e-7, 0.0)   # solver noise: show 
 # and whether every mandate rule holds.
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Ex-ante tracking error", common.pct(diag["te_ex_ante"]), border=True,
-          help=f"Budget {config.TE_TARGET:.0%}")
+          help=f"Budget {s.te_pct:.1f}% (set on Mandate and Views; the fund uses {config.TE_TARGET:.0%})")
 c2.metric("Expected active return", common.pct(diag["expected_active_return"]), border=True)
 c3.metric("Active share", common.pct(active.abs().sum() / 2, 1), border=True)
 c4.metric("Mandate rules", "All met" if not diag["violations"] else "Violated", border=True)
@@ -37,6 +37,9 @@ if diag["violations"]:
 if diag["fallback_to_benchmark"]:
     st.warning("The optimizer found no portfolio that meets the mandate and the tracking-error budget, "
                "so the fund holds the benchmark this month.")
+elif diag["te_ex_ante"] < common.te_budget() * 0.999:
+    st.info(f"Only {common.pct(diag['te_ex_ante'])} of the {s.te_pct:.1f}% budget is used: the mandate rules stop "
+            "the bets before the budget is reached, so a larger budget would not change this portfolio.")
 
 # Weights: the proposed portfolio next to the benchmark, and the over- and underweights.
 classes = {t: c for c, ts in config.ASSET_CLASSES.items() for t in ts}
@@ -56,7 +59,7 @@ with right:
         marker_color=[common.OVER if v >= 0 else common.UNDER for v in active],
         text=[f"{v:+.1%}" for v in active], textposition="outside",
         hovertemplate="%{y}<br>Active %{x:+.1%}<extra></extra>"))
-    lim = max(0.05, active.abs().max() * 1.35)
+    lim = max(0.05, active.abs().max() * 1.6)                  # room for the labels outside the bars
     common.style(fig, "Active weights (over / under)", height=380)
     fig.update_xaxes(tickformat=".0%", range=[-lim, lim], zeroline=True, zerolinecolor="#c3c2b7")
     fig.update_yaxes(autorange="reversed", gridcolor="rgba(0,0,0,0)")

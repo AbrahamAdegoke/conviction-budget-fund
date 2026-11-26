@@ -25,6 +25,14 @@ def test_manual_view_changes_the_portfolio():
     assert not at.exception and effect.abs().sum() > 0.01
 
 
+def test_te_budget_slider_sets_the_ex_ante_tracking_error():
+    for te_pct in (1.0, 3.0):
+        at = AppTest.from_file(PAGES[3], default_timeout=120)
+        at.session_state["te_pct"] = te_pct
+        at.run()
+        assert not at.exception and at.metric[0].value == f"{te_pct:.2f}%"
+
+
 def test_overlapping_certain_views_show_a_message_not_a_crash():
     at = AppTest.from_file(PAGES[3], default_timeout=120)
     at.session_state["confidence"], at.session_state["use_manual"] = 1.0, True

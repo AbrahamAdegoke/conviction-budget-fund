@@ -11,10 +11,10 @@ Python 3.11+. Run every command from the repository root (otherwise `src` is not
 python -m venv .venv
 # macOS / Linux
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python -m pytest -q          # 91 tests (1 skipped if statsmodels is missing)
+.venv/bin/python -m pytest -q          # 92 tests (1 skipped if statsmodels is missing)
 # Windows (PowerShell)
 .venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m pytest -q      # 91 tests (1 skipped if statsmodels is missing)
+.venv\Scripts\python -m pytest -q      # 92 tests (1 skipped if statsmodels is missing)
 ```
 
 `requirements.txt` pins the exact versions with which the tests pass (tested with Python 3.11.4). pandas 3,
@@ -29,7 +29,7 @@ numpy 2.4 and scipy 1.17 need Python 3.11 or later; with an older Python the ins
 Then open http://localhost:8501 (the browser does not open by itself: `.streamlit/config.toml` sets
 `headless = true`). The app reads the saved files in `data/`, so it runs offline. Pages:
 1. **The Fund** – what the fund does, how the model works each month, headline results and their limits.
-2. **Mandate and Views** – benchmark, rules, automatic views for a chosen month, confidence, one manual relative view.
+2. **Mandate and Views** – benchmark, rules, tracking-error budget (0.5–4%), automatic views for a chosen month, confidence, one manual relative view.
 3. **Proposed Portfolio** – optimized weights vs benchmark, ex-ante TE, rule checks, effect of the manual view.
 4. **Results** – backtest metrics and charts (base case).
 
