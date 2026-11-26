@@ -47,9 +47,9 @@ To rebuild the backtest results after a change:
 | Mandate | Long-only, fully invested; bonds 25–45%; EEM ≤ ⅓ of equities; each ETF ≤ 40%; IEF, LQD, TLT within ±5 points of their benchmark weight |
 | Views | Monthly: 12–1 momentum (best vs worst ETF in each asset class) and SPY 200-day trend (equities vs bonds). Q is the spread added on top of the benchmark-implied spread; size calibrated on 2009–2015 |
 | Covariance | Ledoit-Wolf (constant-correlation target), trailing 252 daily returns |
-| Optimizer | Maximize BL alpha × active weights minus trading costs (5 bp, to be paid back within 3 months) s.t. ex-ante TE ≤ 2%, mandate, two-way turnover ≤ 20% (relaxed only as far as needed if infeasible) |
+| Optimizer | Maximize BL alpha × active weights minus trading costs (5 bp, to be paid back within 3 months) s.t. ex-ante TE ≤ 2%, mandate, two-way turnover ≤ 20% (if infeasible, the cap is multiplied by 1.25 until a solution exists) |
 | Backtest | Signal at month-end close, trade at the next close, 5 bp on traded notional, daily drift; benchmark rebalanced monthly at no cost |
-| Portfolios | Benchmark · BL with TE budget only (long-only) · BL under full mandate |
+| Portfolios | Benchmark · BL with TE budget only (long-only) · BL under full mandate · naive MVO (past-year average returns instead of BL alpha, full mandate) |
 
 All method choices and their evidence: [`docs/open_decisions.md`](docs/open_decisions.md).
 
@@ -81,12 +81,13 @@ naive MVO. The price of the rules changes sign between periods (+0.31% a year on
 
 ```text
 src/
-  data.py             data cleaning, returns (Person A)
+  data.py             data cleaning, returns
   signals.py          momentum and trend signals, calibration of K, Black-Litterman views
-  black_litterman.py  covariance, prior, views (Person B)
-  optimizer.py        TE-budget optimizer, mandate checks (Person B)
-  backtest.py         walk-forward backtest, costs (Person C)
-  metrics.py          performance metrics (Person C)
+  black_litterman.py  covariance, prior, views
+  optimizer.py        TE-budget optimizer, mandate checks
+  backtest.py         walk-forward backtest, costs
+  metrics.py          performance metrics
+  variants.py         other periods and settings (TE budget, costs)
   config.py           shared settings
 app/                  Streamlit pages; entry point streamlit_app.py
 notebooks/            01 data audit · 02 BL and optimizer · 03 backtest and metrics

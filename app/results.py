@@ -122,9 +122,9 @@ robust = pd.DataFrame({
                                 ("IR", "Information ratio", lambda x: f"{x:.2f}")]},
     index=[r[0] for r in rows])
 st.dataframe(robust, width="stretch")
-st.caption("2009–2015 is the period used to calibrate the views; 2016–2026 is the test period. Nothing was tuned "
-           "on these numbers. The price of the mandate is the gap between the first two rows: it changes sign "
-           "between the periods.")
+st.caption("2009–2015 is the period used to calibrate the views; 2016–2026 is the test period. Settings were "
+           "chosen on 2009–2015, except the ±5-point bond limit, adopted after also looking at 2016–2026. The price "
+           "of the mandate is the gap between the first two rows: it changes sign between the periods.")
 
 # Weights and trading: what the fund held at each decision and how much it traded.
 st.divider()
