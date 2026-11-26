@@ -58,9 +58,10 @@ steps = [
     ("1 · Signals", "**Momentum:** within equities, within bonds, and between real estate and gold, last "
                     "year's winner should keep beating last year's loser.  \n**Trend:** if the S&P 500 is above its 200-day average, equities "
                     "should beat bonds; below it, the reverse."),
-    ("2 · Black-Litterman", "Start from the returns the market implicitly expects (those that make the "
-                            "benchmark the right portfolio), then blend in our views according to our "
-                            "confidence. Expected returns stay reasonable, never extreme."),
+    ("2 · Black-Litterman", "Start from the returns the benchmark implies (those that make it the right "
+                            "portfolio). Each signal says how much **more** one ETF should earn than another, "
+                            "**on top of** what the benchmark already implies. Black-Litterman combines these "
+                            "views with the prior and with each other, so expected returns move only moderately."),
     ("3 · Optimizer", f"Pick the weights with the highest expected extra return, with tracking error ≤ "
                       f"{config.TE_TARGET:.0%}, every mandate rule respected (see **Mandate and Views**) and at "
                       f"most {config.MAX_TURNOVER:.0%} of the portfolio traded. A trade is made only if its "
