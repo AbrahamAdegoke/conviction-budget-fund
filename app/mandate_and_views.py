@@ -53,7 +53,7 @@ c1.selectbox("Decision month (signal at the month-end close)", [str(m) for m in 
              key="month")
 c2.slider("Confidence in the automatic views", 0.05, 1.0, step=0.05, key="confidence", format="%.2f",
           help="Idzorek confidence. The 2% TE budget is always fully used, so confidence changes the mix "
-               "of bets more than their size (docs/open_decisions.md, item 4).")
+               "of bets more than their size.")
 
 x, diag = common.current_proposal(with_manual=False)
 views = diag["views"]
@@ -76,7 +76,7 @@ if st.session_state.use_manual:
         c1, c2, c3, c4 = st.columns(4)
         c1.selectbox("Outperformer", TICKERS, key="mv_long")
         c2.selectbox("Underperformer", TICKERS, key="mv_short")
-        c3.number_input("Extra spread, % a year", -10.0, 10.0, step=0.5, key="mv_q", format="%.1f")
+        c3.number_input("Extra spread, % a year", -10.0, 10.0, step=0.5, key="mv_q", format="%.2f")
         c4.slider("Confidence", 0.05, 1.0, step=0.05, key="mv_conf", format="%.2f")
 
         s = st.session_state
@@ -89,8 +89,8 @@ if st.session_state.use_manual:
             total = gap + s.mv_q / 100
             direction = ("adds conviction in" if total > implied + 1e-6 else
                          "works against" if total < implied - 1e-6 else "leaves unchanged")
-            st.info(f"The benchmark implies that **{s.mv_long}** beats **{s.mv_short}** by {common.pct(gap)} a "
-                    f"year, and the automatic views already raise this to **{common.pct(implied)}**. Your view sets "
-                    f"it at {common.pct(total)}, so it **{direction}** {s.mv_long} over {s.mv_short}. To push further "
-                    f"towards {s.mv_long}, enter more than {(implied - gap) * 100:+.1f}%.")
+            st.info(f"Expected return of **{s.mv_long}** minus **{s.mv_short}**: {gap:+.2%} a year implied by the "
+                    f"benchmark, **{implied:+.2%}** after the automatic views. Your view sets it at {total:+.2%}, so "
+                    f"it **{direction}** {s.mv_long} over {s.mv_short}. To push further towards {s.mv_long}, enter "
+                    f"more than {(implied - gap) * 100:+.2f}%.")
             st.caption("Open **Proposed Portfolio** to see its effect.")

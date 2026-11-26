@@ -124,4 +124,4 @@ def sidebar_summary():
     st.sidebar.markdown("**Current choices**")
     st.sidebar.markdown(
         f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nView confidence: **{s.confidence:.0%}**  \n"
-        + (f"Manual view: **{mv['long']} > {mv['short']} (+{s.mv_q:.1f}%)**" if mv else "Manual view: none"))
+        + (f"Manual view: **{mv['long']} > {mv['short']} ({s.mv_q:+.2f}%)**" if mv else "Manual view: none"))

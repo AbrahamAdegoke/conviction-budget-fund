@@ -19,10 +19,10 @@ s = st.session_state
 common.header("Proposed Portfolio", "What would the fund hold after this month's decision?")
 st.caption(f"Decision at the close of {s.month}, traded at the next session · {s.rules_label} · "
            f"automatic views at {s.confidence:.0%} confidence"
-           + (f" · manual view {s.mv_long} > {s.mv_short} ({s.mv_q:+.1f}%)" if common.manual_view() else ""))
+           + (f" · manual view {s.mv_long} > {s.mv_short} ({s.mv_q:+.2f}%)" if common.manual_view() else ""))
 
 x, diag = common.current_proposal()
-active = x - BENCH
+active = (x - BENCH).mask(lambda a: a.abs() < 5e-7, 0.0)   # solver noise: show 0.0%, not -0.0%
 
 # Headline numbers: risk used, expected extra return, how different the portfolio is,
 # and whether every mandate rule holds.
@@ -67,7 +67,7 @@ table = pd.DataFrame({"Asset class": [classes[t] for t in TICKERS], "Benchmark":
                       "Active": active, "Alpha (BL)": diag["returns"]["alpha"]})
 if common.manual_view():
     x0, _ = common.current_proposal(with_manual=False)
-    table["Effect of manual view"] = x - x0
+    table["Effect of manual view"] = (x - x0).mask(lambda d: d.abs() < 5e-7, 0.0)
 signed = [c for c in ["Active", "Alpha (BL)", "Effect of manual view"] if c in table]
 st.dataframe(
     table.style.format("{:.1%}", subset=["Benchmark", "Proposed"])
