@@ -7,20 +7,17 @@
 3. Reversed views: every Q multiplied by -1. If the views carry information, the fund should lose about what
    it gains; if the result were luck, the sign would not matter.
 
-Run from the repository root:  python scripts/sensitivity_k_ratio.py   (about 3 minutes)
+Run from the repository root:  python -m src.sensitivity   (about 3 minutes)
 """
 
 import dataclasses
-import sys
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from src import config, data, signals  # noqa: E402
-from src.backtest import run_backtest  # noqa: E402
-from src.optimizer import load_inputs  # noqa: E402
+from . import config, data, signals
+from .backtest import run_backtest
+from .optimizer import load_inputs
 
 PERIODS = {"2009-2015 (calibration)": ("2008-12", "2015-11"), "2016-2026 (test)": ("2015-12", "2026-09")}
 FACTORS = [0.0, 0.5, 1.0, 2.0]

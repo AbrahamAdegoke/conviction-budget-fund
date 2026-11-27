@@ -132,7 +132,7 @@ reported as it is.
 
 - **Other settings** (`python -m src.variants`, shown on the Results page): TE budget 1% or 3%, costs 0 or 25 bp,
   one at a time, on both periods. At 25 bp the full mandate keeps an IR of 0.22 on 2016–2026.
-- **Weight of the trend view** (`python scripts/sensitivity_k_ratio.py`): K_TREND × 0 / 0.5 / 1 / 2 gives a
+- **Weight of the trend view** (`python -m src.sensitivity`): K_TREND × 0 / 0.5 / 1 / 2 gives a
   full-mandate IR of 0.69 / 0.58 / 0.42 / 0.31 on 2009–2015 and 0.50 / 0.32 / 0.22 / 0.16 on 2016–2026. The less
   the trend view weighs, the better the fund does, on both periods. The model is not changed: choosing the
   weight now would mean tuning on the test period.

@@ -88,10 +88,10 @@ src/
   backtest.py         walk-forward backtest, costs
   metrics.py          performance metrics
   variants.py         other periods and settings (TE budget, costs)
+  sensitivity.py      weight of the trend view, views at the cap, reversed views
   config.py           shared settings
 app/                  Streamlit pages; entry point streamlit_app.py
 notebooks/            01 data audit · 02 BL and optimizer · 03 backtest and metrics
-scripts/              sensitivity_k_ratio.py: sensitivity of the results to the size of the views
 tests/                pytest suite
 data/processed/       clean returns, signals, views
 data/results/         backtest output used by the app
