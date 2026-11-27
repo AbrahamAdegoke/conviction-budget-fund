@@ -95,7 +95,7 @@ scripts/              sensitivity_k_ratio.py: sensitivity of the results to the 
 tests/                pytest suite
 data/processed/       clean returns, signals, views
 data/results/         backtest output used by the app
-docs/                 methodology (choices and why), presentation script
+docs/                 methodology.md: every method choice and why
 ```
 
 ## Data
