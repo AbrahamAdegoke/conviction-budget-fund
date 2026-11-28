@@ -1,14 +1,10 @@
-"""Data loading, cleaning and return construction for the Conviction Budget Fund.
-
-Protocol: Data Audit & Cleaning V1.4.
-- Raw files are never modified.
-- Only NYSE sessions are kept.
-- Prices are never interpolated or forward-filled.
-- Returns are simple returns computed from the Total Return Index (RI).
-- Monthly returns use a common NYSE month-end; a missing month-end makes
-  that month's and the next month's returns unavailable (NaN).
+"""Data loading, cleaning and return construction:
+- Raw files are never modified
+- Only NYSE sessions are kept
+- Prices are never interpolated or forward-filled
+- Returns are simple returns computed from the Total Return Index (RI)
+- Monthly returns use a common NYSE month-end; a missing month-end makes that month's and the next month's returns unavailable (NaN)
 """
-
 from pathlib import Path
 
 import pandas as pd
@@ -23,8 +19,7 @@ REPORTS_DIR = PROJECT_ROOT / "data" / "reports"
 PRICE_SHEET = "Price"
 RI_SHEET = "Total return index"
 
-# Each ETF is identified by a keyword in its Datastream name
-# (column order differs between the Price and RI sheets).
+# Each ETF is identified by a keyword in its Datastream name (the column order differs between the two sheets)
 TICKER_KEYWORDS = {
     "SPY": "S&P 500",
     "EFA": "EAFE",
@@ -37,12 +32,11 @@ TICKER_KEYWORDS = {
 }
 TICKERS = list(TICKER_KEYWORDS)
 
-
-# ---------------------------------------------------------------------------
-# Loading
-# ---------------------------------------------------------------------------
+# Loading: read the raw Datastream workbook and the FRED risk-free rate.
+# Problems found are counted in an audit dict, never silently fixed: a duplicated date stops the pipeline, a bad date drops its row, a non-numeric cell becomes missing and its session is excluded later.
 def map_columns_to_tickers(columns):
     """Map Datastream column names to tickers; fail on ambiguous or missing ETFs."""
+
     mapping = {}
     for col in columns:
         matches = [t for t, kw in TICKER_KEYWORDS.items() if kw in str(col).upper()]
@@ -55,10 +49,8 @@ def map_columns_to_tickers(columns):
 
 
 def load_datastream_sheet(sheet, path=ETF_FILE):
-    """Read one Datastream sheet: Date index, one numeric column per ticker.
-
-    Returns the cleaned frame and a dict of audit counts
-    (invalid dates, duplicated dates, non-numeric values per ticker).
+    """Read one Datastream sheet: Date index, one numeric column per ticker
+    Returns the cleaned frame and a dict of audit counts (invalid dates, duplicated dates, non-numeric values per ticker)
     """
     df = pd.read_excel(path, sheet_name=sheet, header=0)
     df = df.rename(columns={df.columns[0]: "Date"})
@@ -91,9 +83,7 @@ def load_risk_free(path=RF_FILE):
     return rf.dropna(subset=["Date"]).set_index("Date").sort_index()["DGS1MO"]
 
 
-# ---------------------------------------------------------------------------
-# Calendar
-# ---------------------------------------------------------------------------
+# Calendar: the official NYSE calendar decides which dates are real trading days, so holiday rows copied from the previous day are dropped instead of creating fake zero returns.
 def nyse_sessions(start, end):
     """Official NYSE trading sessions between two dates (inclusive)."""
     schedule = mcal.get_calendar("NYSE").schedule(start_date=start, end_date=end)
@@ -108,9 +98,7 @@ def keep_sessions(df, sessions):
     return df.loc[df.index.isin(sessions)].copy(), non_sessions, missing_sessions
 
 
-# ---------------------------------------------------------------------------
-# Quality checks (detection only, never automatic deletion)
-# ---------------------------------------------------------------------------
+# Quality check: flag long runs of zero returns (a stale price). Nothing is deleted automatically, the data notebook logs every decision in the quality report.
 def zero_runs(series, min_len):
     """Runs of at least min_len consecutive zero returns: list of (start date, length)."""
     z = series.eq(0)
@@ -118,14 +106,8 @@ def zero_runs(series, min_len):
     return [(grp.index[0], len(grp)) for _, grp in series[z].groupby(block[z]) if len(grp) >= min_len]
 
 
-def extreme_returns(returns, threshold=0.15):
-    """Daily returns whose absolute value exceeds the threshold, per ticker."""
-    return {t: returns[t][returns[t].abs() > threshold] for t in returns.columns}
-
-
-# ---------------------------------------------------------------------------
-# Returns
-# ---------------------------------------------------------------------------
+# Returns: simple daily and monthly returns from the Total Return Index (dividends included),
+# without filling missing prices. compounded_monthly checks that both frequencies agree.
 def daily_returns(ri, sessions):
     """Simple daily returns from RI, without filling, with a 'regular' flag.
 
@@ -180,9 +162,7 @@ def compounded_monthly(daily):
     return compounded.where(complete)
 
 
-# ---------------------------------------------------------------------------
-# Full pipeline
-# ---------------------------------------------------------------------------
+# Full pipeline: one call that turns the raw workbook into clean prices and returns. The data notebook (01) uses it to write the files in data/processed/
 def build_clean_dataset(path=ETF_FILE):
     """Load both sheets, keep NYSE sessions and build daily and monthly returns.
 
@@ -202,7 +182,7 @@ def build_clean_dataset(path=ETF_FILE):
     price_clean, _, _ = keep_sessions(price, sessions)
     ri_clean, _, _ = keep_sessions(ri, sessions)
 
-    # Common exclusion rule: drop a session if any ETF is missing or non-positive
+    # Common exclusion rule, drop a session if any ETF is missing or non-positive
     valid = (
         price_clean.notna().all(axis=1)
         & ri_clean.notna().all(axis=1)
@@ -229,6 +209,7 @@ def build_clean_dataset(path=ETF_FILE):
     }
 
 
+# The backtest and the app read the saved CSV files, so they run without the raw data
 def load_processed():
     """Read the exported clean files (for the backtest and the app)."""
     daily = pd.read_csv(PROCESSED_DIR / "etf_daily_returns.csv", index_col="Date", parse_dates=True)

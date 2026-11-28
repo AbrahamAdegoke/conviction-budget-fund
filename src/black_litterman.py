@@ -1,4 +1,4 @@
-"""Covariance and Black-Litterman views for the Conviction Budget Fund (Person B).
+"""Covariance and Black-Litterman views for the Conviction Budget Fund.
 
 Conventions (see notebooks/02_bl_optimizer.ipynb):
 - Covariance at decision month t: Ledoit-Wolf (2003) shrinkage to constant correlation (LN3) on the
@@ -18,12 +18,9 @@ from .data import PROCESSED_DIR, TICKERS
 VIEWS_FILE = PROCESSED_DIR / "bl_views.csv"
 
 
-# ---------------------------------------------------------------------------
-# Covariance
-# ---------------------------------------------------------------------------
+# Covariance: estimate how the 8 ETFs move together over the last year, shrunk towards a simpler constant-correlation matrix (Ledoit-Wolf) so the optimizer does not chase noise.
 def ledoit_wolf_cc(X):
     """Ledoit-Wolf shrinkage to the constant-correlation target.
-
     X: (T, N) returns. Returns (Sigma, delta, rbar) in the units of X.
     """
     X = np.asarray(X, float)
@@ -62,9 +59,7 @@ def covariance_at(daily, month_end, window=COV_WINDOW):
     return pd.DataFrame(Sigma * ANNUALIZATION, index=TICKERS, columns=TICKERS), delta, rbar
 
 
-# ---------------------------------------------------------------------------
-# Prior and posterior
-# ---------------------------------------------------------------------------
+# Prior and posterior: start from the returns that make the benchmark the right portfolio (the prior), then tilt them towards our views by an amount set by the confidence (LN4).
 def implied_excess_returns(Sigma, b, sr):
     """LN4 implied risk premia: pi = phi * Sigma b with phi = sr / sigma(b). Returns (pi, phi, sigma_b)."""
     Sigma, b = np.asarray(Sigma, float), np.asarray(b, float)
@@ -81,6 +76,10 @@ def bl_posterior(mu_prior, Sigma, P, Q, conf, tau=0.05):
     c = np.broadcast_to(np.asarray(conf, float), Q.shape)
     if np.any(c <= 0) or np.any(c > 1):
         raise ValueError("Confidence must be in (0, 1]")
+    certain = P[c >= 1.0]                     # views held as exactly true (Omega_k = 0)
+    if len(certain) > 1 and np.linalg.matrix_rank(certain) < len(certain):
+        raise ValueError("Views held with 100% confidence overlap (one is a combination of the others), so they "
+                         "cannot all hold exactly. Lower one of the confidences below 100%.")
     Gamma = tau * Sigma
     Omega = np.diag((1 - c) / c * np.diag(P @ Gamma @ P.T))
     return np.asarray(mu_prior, float) + Gamma @ P.T @ np.linalg.solve(P @ Gamma @ P.T + Omega, Q - P @ mu_prior)
@@ -92,9 +91,7 @@ def bl_alpha(Sigma, P, Q, conf):
     return bl_posterior(np.zeros(n), Sigma, P, Q, conf)
 
 
-# ---------------------------------------------------------------------------
-# Views
-# ---------------------------------------------------------------------------
+# Views: read the monthly automatic views, turn them into the P and Q matrices of LN4, and optionally add one manual view chosen in the app.
 def load_views(path=VIEWS_FILE):
     """Automatic views exported by the data notebook (one set of rows per decision month)."""
     views = pd.read_csv(path)

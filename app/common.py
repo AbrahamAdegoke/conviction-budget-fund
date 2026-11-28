@@ -1,18 +1,19 @@
-"""Shared state and cached loaders for the Streamlit app (plan task 9). Everything reads data/ (offline)."""
+"""Shared state and cached loaders for the Streamlit app. Everything reads data/ (offline)."""
 
 import pandas as pd
 import streamlit as st
 
 from src import config
 from src.backtest import RESULTS_DIR, load_results
-from src.data import TICKERS
-from src.optimizer import BENCH, load_inputs, propose_portfolio
+from src.optimizer import load_inputs, propose_portfolio
 
 RULE_SETS = {"Full mandate": "full", "TE budget only (long-only)": "long_only"}
-PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only", "bl_full": "BL, full mandate"}
+PORTFOLIO_LABELS = {"benchmark": "Benchmark", "bl_te_only": "BL, TE budget only", "bl_full": "BL, full mandate",
+                    "mvo_naive": "Naive MVO"}
 
 # User choices made on "Mandate and Views", used by "Proposed Portfolio"
 DEFAULTS = {"month": None, "rules_label": "Full mandate", "confidence": config.DEFAULT_CONFIDENCE,
+            "te_pct": config.TE_TARGET * 100,                    # tracking-error budget, % a year
             "use_manual": False, "mv_long": "SPY", "mv_short": "TLT", "mv_q": 1.0, "mv_conf": 0.50}
 
 
@@ -47,17 +48,36 @@ def manual_view():
 
 
 @st.cache_data(show_spinner="Optimizing...")
-def proposal(month, rules, confidence, manual):
+def proposal(month, rules, confidence, manual, te=config.TE_TARGET):
     """Weights for the current choices. x_prev=None: a fresh portfolio, so no turnover cap."""
     mv = dict(manual) if manual else None
-    return propose_portfolio(month, inputs(), x_prev=None, rules=rules, confidence=confidence, manual_view=mv)
+    return propose_portfolio(month, inputs(), x_prev=None, rules=rules, confidence=confidence, manual_view=mv,
+                             te=te)
+
+
+def te_budget():
+    """Tracking-error budget chosen in the app (decimal, a year)."""
+    return st.session_state.te_pct / 100
 
 
 def current_proposal(with_manual=True):
+    """Proposal for the current choices; a clear message instead of a crash if the views cannot be combined."""
     s = st.session_state
     mv = manual_view() if with_manual else None
-    return proposal(s.month, RULE_SETS[s.rules_label], s.confidence,
-                    tuple(sorted(mv.items())) if mv else None)       # hashable for the cache
+    try:
+        return proposal(s.month, RULE_SETS[s.rules_label], s.confidence,
+                        tuple(sorted(mv.items())) if mv else None, te_budget())   # hashable for the cache
+    except ValueError as exc:
+        st.error(f"The portfolio cannot be computed with these settings: {exc}")
+        st.stop()
+
+
+@st.cache_data
+def extra_results():
+    """Ex-ante vs realized TE by asset block (src.metrics) and backtest variants on both periods (src.variants)."""
+    blocks = pd.read_csv(RESULTS_DIR / "te_by_block.csv", index_col=[0, 1])
+    variants = pd.read_csv(RESULTS_DIR / "variants.csv")
+    return blocks, variants
 
 
 @st.cache_data
@@ -72,12 +92,14 @@ def pct(x, digits=2):
     return f"{x:.{digits}%}"
 
 
-# --- Look and feel -------------------------------------------------------------------------------
+# Look and feel: the same colours on every page, so a portfolio is recognised at a glance.
 # One colour per portfolio on every chart; benchmark in neutral ink (it is the reference).
-COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834"}
+COLORS = {"benchmark": "#898781", "bl_full": "#2a78d6", "bl_te_only": "#eb6834", "mvo_naive": "#6250d6"}
 LABEL_COLORS = {PORTFOLIO_LABELS[k]: v for k, v in COLORS.items()}
-ETF_COLORS = dict(zip(TICKERS, ["#2a78d6", "#eb6834", "#1baf7a", "#eda100",
-                                "#e87ba4", "#008300", "#6250d6", "#e34948"]))
+# ETFs: one hue per asset class (equities blue, bonds green, alternatives amber), lighter for smaller weights
+ETF_COLORS = {"SPY": "#1f4e8c", "EFA": "#2a78d6", "EEM": "#8ab8ec",
+              "IEF": "#0f6b4f", "LQD": "#1baf7a", "TLT": "#8fd9b6",
+              "VNQ": "#b06a12", "GLD": "#eda100"}
 OVER, UNDER = "#2a78d6", "#e34948"           # diverging pair for active weights
 INK, MUTED, GRID = "#0b0b0b", "#898781", "#e1e0d9"
 
@@ -108,5 +130,6 @@ def sidebar_summary():
     mv = manual_view()
     st.sidebar.markdown("**Current choices**")
     st.sidebar.markdown(
-        f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nView confidence: **{s.confidence:.0%}**  \n"
-        + (f"Manual view: **{mv['long']} > {mv['short']} (+{s.mv_q:.1f}%)**" if mv else "Manual view: none"))
+        f"Month: **{s.month}**  \nRules: **{s.rules_label}**  \nTE budget: **{s.te_pct:.1f}%**  \n"
+        f"View confidence: **{s.confidence:.0%}**  \n"
+        + (f"Manual view: **{mv['long']} > {mv['short']} ({s.mv_q:+.2f}%)**" if mv else "Manual view: none"))

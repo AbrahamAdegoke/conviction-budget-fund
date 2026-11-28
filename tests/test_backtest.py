@@ -1,4 +1,4 @@
-"""Checks for the walk-forward backtest (plan task 7). Short sample (2016) to keep them fast."""
+"""Checks for the walk-forward backtest. Short sample (2016) to keep them fast."""
 
 import numpy as np
 import pandas as pd
@@ -68,3 +68,34 @@ def test_no_look_ahead(inputs):
     corrupted = type(inputs)(daily=daily, month_ends=inputs.month_ends, views=inputs.views)
     _, other = run_backtest("full", corrupted, FIRST, "2016-06")
     pd.testing.assert_frame_equal(weights(base), weights(other))
+
+
+def test_failed_optimization_falls_back_to_benchmark(inputs, monkeypatch):
+    import src.optimizer as op
+    equal = pd.Series(1 / len(TICKERS), index=TICKERS)        # what a broken optimizer might return
+    monkeypatch.setattr(op, "propose_weights", lambda *args, **kwargs: (equal, False, 2.0))
+    x, diag = op.propose_portfolio("2020-03", inputs, x_prev=BENCH, rules="full")
+    assert diag["fallback_to_benchmark"] and not diag["ok"]
+    assert np.allclose(x.values, BENCH.values) and check_rules(x, "full") == []
+    _, monthly = run_backtest("full", inputs=inputs, first="2016-01", last="2016-02")
+    assert monthly["fallback_to_benchmark"].all()
+
+
+def test_naive_mvo_alpha_has_no_look_ahead(inputs):
+    from src.optimizer import naive_alpha
+    month_end = inputs.month_ends[pd.Period("2020-06", "M")]
+    before = naive_alpha(inputs.daily, month_end)
+    shocked = inputs.daily.copy()
+    later = shocked.index > month_end
+    shocked.loc[later, TICKERS] = shocked.loc[later, TICKERS] * 50
+    assert np.allclose(naive_alpha(shocked, month_end), before)
+
+
+def test_propose_portfolio_on_a_real_month(inputs):
+    from src import config
+    from src.optimizer import propose_portfolio, tracking_error
+    x, diag = propose_portfolio("2026-10", inputs, x_prev=BENCH, rules="full")
+    assert diag["ok"] and not diag["fallback_to_benchmark"] and diag["violations"] == []
+    assert np.isclose(x.sum(), 1.0) and (x >= -1e-9).all()
+    assert tracking_error(x, diag["Sigma"]) <= config.TE_TARGET * (1 + 1e-5)
+    assert np.abs(x - BENCH).sum() <= config.MAX_TURNOVER + 1e-6

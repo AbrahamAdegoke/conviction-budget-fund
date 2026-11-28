@@ -1,4 +1,4 @@
-"""Performance metrics for the backtest (Person C, plan task 8).
+"""Performance metrics for the backtest.
 
 Inputs: the saved backtest (src/backtest.py), daily simple returns net and gross of the 5 bp cost.
 Conventions:
@@ -7,14 +7,18 @@ Conventions:
 - Risk-free: FRED DGS1MO (annual %), last published value carried over bond-market holidays, applied to the
   next session as yield / 252. Only the Sharpe ratio uses it: active return and IR do not need it.
 - 95% ES: historical, average of the worst 5% daily returns, reported as a positive loss.
+- Realized TE is given on daily returns (x sqrt 252) and on monthly returns (x sqrt 12): daily active returns
+  are slightly negatively autocorrelated, so the two differ; the committee looks at the fund monthly.
+- Jensen's alpha (LN2): monthly OLS of R(x) - r on R(b) - r, t-stat with Newey-West standard errors.
 """
 
 import numpy as np
 import pandas as pd
 
 from .backtest import RESULTS_DIR, load_results
-from .config import ANNUALIZATION as A
-from .data import load_risk_free
+from .black_litterman import covariance_at
+from .config import ANNUALIZATION as A, ASSET_CLASSES, BENCHMARK
+from .data import TICKERS, load_risk_free
 
 ES_LEVEL = 0.95
 
@@ -31,9 +35,12 @@ def cagr(r):
 
 
 def max_drawdown(r):
-    """Largest peak-to-trough fall of the cumulative value (positive number)."""
+    """Largest peak-to-trough fall of the cumulative value (positive number), starting from a value of 1.
+
+    The starting capital counts as a peak, so a loss before the value first rises is a drawdown too.
+    """
     nav = (1 + r).cumprod()
-    return float(-(nav / nav.cummax() - 1).min())
+    return float(-(nav / nav.cummax().clip(lower=1.0) - 1).min())
 
 
 def expected_shortfall(r, level=ES_LEVEL):
@@ -41,14 +48,49 @@ def expected_shortfall(r, level=ES_LEVEL):
     return float(-r[r <= r.quantile(1 - level)].mean())
 
 
+def monthly(r):
+    """Compound daily returns into calendar-month returns."""
+    return (1 + r).groupby(r.index.to_period("M")).prod() - 1
+
+
+def newey_west_lags(n):
+    """Usual automatic lag length floor(4 (n/100)^(2/9))."""
+    return int(np.floor(4 * (n / 100) ** (2 / 9)))
+
+
+def jensen(port_excess, bench_excess, lags=None):
+    """OLS port_excess = alpha + beta bench_excess + e, with Newey-West (Bartlett) standard errors.
+
+    Returns (alpha, beta, t-stat of alpha), alpha per period of the inputs.
+    """
+    y = np.asarray(port_excess, float)
+    X = np.column_stack([np.ones(len(y)), np.asarray(bench_excess, float)])
+    n = len(y)
+    lags = newey_west_lags(n) if lags is None else lags
+    XtX_inv = np.linalg.inv(X.T @ X)
+    coef = XtX_inv @ X.T @ y
+    u = y - X @ coef
+    Xu = X * u[:, None]
+    S = Xu.T @ Xu
+    for lag in range(1, lags + 1):
+        w = 1 - lag / (lags + 1)
+        G = Xu[lag:].T @ Xu[:-lag]
+        S += w * (G + G.T)
+    cov = XtX_inv @ S @ XtX_inv
+    return float(coef[0]), float(coef[1]), float(coef[0] / np.sqrt(cov[0, 0]))
+
+
 def summary(net, gross, log, benchmark="benchmark"):
     """One row per portfolio with the plan's metrics (all annualized except ES and drawdowns)."""
     rf = risk_free_daily(net.index)
     years = len(net) / A
+    rf_m, bench_m = monthly(rf), monthly(net[benchmark])
     rows = {}
     for p in net.columns:
         r, active = net[p], net[p] - net[benchmark]
         te = active.std() * np.sqrt(A)
+        port_m = monthly(r)
+        alpha, beta, t_alpha = jensen(port_m - rf_m, bench_m - rf_m) if te > 0 else (np.nan, 1.0, np.nan)
         trades = log.loc[log["portfolio"] == p]
         rows[p] = {
             "Return (CAGR)": cagr(r),
@@ -58,8 +100,12 @@ def summary(net, gross, log, benchmark="benchmark"):
             "Active return (gross)": (gross[p] - gross[benchmark]).mean() * A,
             "Active CAGR": cagr(r) - cagr(net[benchmark]),
             "Realized TE": te,
+            "Realized TE (monthly)": (port_m - bench_m).std() * np.sqrt(12),
             "Information ratio": active.mean() * A / te if te > 0 else np.nan,
             "t-stat active return": active.mean() / active.std() * np.sqrt(len(active)) if te > 0 else np.nan,
+            "Jensen alpha (annualized)": alpha * 12,
+            "Jensen beta": beta,
+            "t-stat Jensen alpha (Newey-West)": t_alpha,
             "Turnover (two-way, per year)": trades["traded"].sum() / years,
             "Cost (per year)": trades["cost"].sum() / years,
             "Max drawdown": max_drawdown(r),
@@ -77,11 +123,51 @@ def by_year(net, benchmark="benchmark"):
     return pd.concat({"Active return": g.mean() * A, "Realized TE": g.std() * np.sqrt(A)}, axis=1)
 
 
+def te_by_block(log, inputs, portfolio="bl_full"):
+    """Ex-ante vs realized tracking error of the equity, bond and alternative positions.
+
+    For each decision month: active weights a = target - benchmark (drift within the month ignored), ex-ante
+    variance a_B' Sigma a_B of each block B with the covariance known at the decision, and the realized daily
+    active return of the block over the next month. Ex-ante TE = sqrt(mean ex-ante variance); realized TE =
+    std of the daily block returns x sqrt(252). Share = contribution of the block to the realized active
+    variance (the shares sum to 1).
+    """
+    rows = log.loc[log["portfolio"] == portfolio].set_index("month")
+    bench = pd.Series(BENCHMARK)[TICKERS]
+    rets = inputs.daily[TICKERS]
+    blocks = {**ASSET_CLASSES, "Total": TICKERS}
+    exa = {b: [] for b in blocks}
+    real = {b: [] for b in blocks}
+    for month, row in rows.iterrows():
+        m = pd.Period(month, "M")
+        if m + 1 not in inputs.month_ends.index:
+            continue
+        Sigma = covariance_at(inputs.daily, inputs.month_ends[m])[0].values
+        a = row[[f"w_{t}" for t in TICKERS]].to_numpy(float) - bench.values
+        r = rets.loc[(rets.index > inputs.month_ends[m]) & (rets.index <= inputs.month_ends[m + 1])].values
+        for b, names in blocks.items():
+            a_b = np.where([t in names for t in TICKERS], a, 0.0)
+            exa[b].append(a_b @ Sigma @ a_b)
+            real[b].append(r @ a_b)
+    total = np.concatenate(real["Total"])
+    out = {}
+    for b in blocks:
+        rb = np.concatenate(real[b])
+        ex_ante, realized = np.sqrt(np.mean(exa[b])), rb.std() * np.sqrt(A)
+        out[b] = {"Ex-ante TE": ex_ante, "Realized TE": realized, "Realized / ex-ante": realized / ex_ante,
+                  "Share of realized active variance": np.cov(rb, total)[0, 1] / total.var(ddof=1)}
+    return pd.DataFrame(out).T
+
+
 def compute_all(save=True):
     """Metrics from the saved backtest; saved for the app's Results page (works offline)."""
+    from .optimizer import load_inputs                         # local import: optimizer imports backtest
     net, gross, log = load_results()
     table, yearly = summary(net, gross, log), by_year(net)
+    inputs = load_inputs()
+    blocks = pd.concat({p: te_by_block(log, inputs, p) for p in ["bl_full", "bl_te_only"]}, names=["portfolio", "block"])
     if save:
         table.to_csv(RESULTS_DIR / "metrics.csv", index_label="portfolio")
         yearly.to_csv(RESULTS_DIR / "metrics_by_year.csv", index_label="year")
+        blocks.to_csv(RESULTS_DIR / "te_by_block.csv")
     return table, yearly

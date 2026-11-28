@@ -1,6 +1,6 @@
-"""Monthly walk-forward backtest for the Conviction Budget Fund (Person C, plan task 7).
+"""Monthly walk-forward backtest for the Conviction Budget Fund.
 
-Timing (agreed 14 Nov, docs/open_decisions.md):
+Timing (see docs/methodology.md, section 7):
 - Decision at the close of month-end t, using only data up to that close (propose_portfolio).
 - Trade at the close of the first session of month t+1: that session is still earned by the old,
   drifted weights, then the portfolio is rebalanced to the target.
@@ -10,31 +10,32 @@ Timing (agreed 14 Nov, docs/open_decisions.md):
   The benchmark is rebalanced to its fixed weights at no cost (it is the reference index).
 - First decision (2015-12) starts from the benchmark weights.
 
-Simulated with daily returns so the next-day trade is exact and task 8 can compute realized TE,
+Simulated with daily returns so the next-day trade is exact and the metrics can use realized TE,
 drawdown and ES from daily data.
 """
 
-import numpy as np
 import pandas as pd
 
 from . import config
 from .data import PROJECT_ROOT, TICKERS
-from .optimizer import BENCH, load_inputs, propose_portfolio
+from .optimizer import BENCH, load_inputs, propose_mvo, propose_portfolio
 
 RESULTS_DIR = PROJECT_ROOT / "data" / "results"
 
 FIRST_DECISION, LAST_DECISION = "2015-12", "2026-09"   # returns earned Jan 2016 - Oct 2026
-COST_BP = 5.0
+COST_BP = config.TRADING_COST_BP
 
 # Portfolio name -> optimizer rule set (None = fixed benchmark weights)
-PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full"}
+# "mvo" = naive mean-variance (past-year average returns as alpha), full mandate
+PORTFOLIOS = {"benchmark": None, "bl_te_only": "long_only", "bl_full": "full", "mvo_naive": "mvo"}
 
 
 def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, cost_bp=COST_BP,
-                 max_turnover=config.MAX_TURNOVER, confidence=config.DEFAULT_CONFIDENCE):
+                 max_turnover=config.MAX_TURNOVER, confidence=config.DEFAULT_CONFIDENCE, te=config.TE_TARGET):
     """Sequential backtest of one portfolio.
 
-    rules: None for the benchmark, else 'full' / 'long_only' / 'none' (see optimizer.RULES).
+    rules: None for the benchmark, 'mvo' for the naive MVO, else 'full' / 'long_only' / 'none' (optimizer.RULES).
+    cost_bp is both charged on each trade and passed to the optimizer's cost penalty; te is the TE budget.
     Returns (daily, monthly):
       daily   DataFrame indexed by session: gross, cost, net (simple returns)
       monthly DataFrame indexed by decision month: target weights and trade/optimizer diagnostics
@@ -43,15 +44,18 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
     rets = inputs.daily[TICKERS]
     month_ends = inputs.month_ends
     w = BENCH.copy()                                      # holdings after drift
+    penalty = config.cost_penalty(cost_bp)                # the optimizer knows the cost it will be charged
     daily_rows, monthly_rows = [], []
 
     for m in pd.period_range(first, last, freq="M"):
         # 1) Decision at the close of month-end m
         if rules is None:
             x, diag = BENCH.copy(), {}
+        elif rules == "mvo":
+            x, diag = propose_mvo(m, inputs, x_prev=w, max_turnover=max_turnover, te=te, cost=penalty)
         else:
-            x, diag = propose_portfolio(m, inputs, x_prev=w, rules=rules,
-                                        confidence=confidence, max_turnover=max_turnover)
+            x, diag = propose_portfolio(m, inputs, x_prev=w, rules=rules, confidence=confidence,
+                                        max_turnover=max_turnover, te=te, cost=penalty)
 
         # 2) Hold through month m+1; trade at the close of its first session
         sessions = rets.loc[month_ends[m]:month_ends[m + 1]].iloc[1:]
@@ -70,6 +74,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
             "turnover_ex_ante": diag.get("turnover"), "te_ex_ante": diag.get("te_ex_ante"),
             "expected_active_return": diag.get("expected_active_return"),
             "relaxed_turnover_cap": diag.get("relaxed_turnover_cap"),
+            "fallback_to_benchmark": diag.get("fallback_to_benchmark", False),
             "violations": "; ".join(diag.get("violations", [])),
             **{f"w_{t}": x[t] for t in TICKERS},
         })
@@ -80,7 +85,7 @@ def run_backtest(rules, inputs=None, first=FIRST_DECISION, last=LAST_DECISION, c
 
 
 def run_all(save=True, **kwargs):
-    """Run the three portfolios of the plan and save the results for task 8 and the app (offline)."""
+    """Run the four portfolios of the plan and save the results for the metrics and the app (offline)."""
     inputs = load_inputs()
     daily, monthly = {}, {}
     for name, rules in PORTFOLIOS.items():

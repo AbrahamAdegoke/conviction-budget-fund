@@ -17,7 +17,7 @@ from src.optimizer import BENCH
 common.init_state()
 common.header("Mandate and Views", "What is the fund allowed to hold, and what do the signals say this month?")
 
-# --- Mandate -----------------------------------------------------------------------------------
+# Mandate: the benchmark the fund is measured against, and the rules every portfolio must respect.
 left, right = st.columns([3, 2], gap="large")
 with left:
     st.subheader("Benchmark")
@@ -36,33 +36,43 @@ with right:
 - Bonds between **{config.BOND_MIN:.0%}** and **{config.BOND_MAX:.0%}**
 - EEM ≤ **one third** of equities
 - Each ETF ≤ **{config.MAX_WEIGHT:.0%}**
-- Ex-ante tracking error ≤ **{config.TE_TARGET:.0%}** a year
+- IEF, LQD and TLT within **±{config.BOND_ACTIVE_CAP * 100:.0f} points** of their benchmark weight
+- Ex-ante tracking error ≤ **{st.session_state.te_pct:.1f}%** a year (budget, set below)
 """)
     st.radio("Rules for the proposed portfolio", list(common.RULE_SETS), key="rules_label",
-             help="'TE budget only' drops the bond range, the EEM rule and the 40% cap, keeping long-only.")
+             help="'TE budget only' drops the bond range, the EEM rule, the 40% cap and the bond limits, "
+                  "keeping long-only.")
+    st.slider("Tracking-error budget, % a year", 0.5, 4.0, step=0.5, key="te_pct", format="%.1f%%",
+              help=f"How far the portfolio may deviate from the benchmark: the conviction budget. The fund uses "
+                   f"{config.TE_TARGET:.0%}; the backtest on the Results page is always computed at "
+                   f"{config.TE_TARGET:.0%} (1% and 3% are in its 'Other periods and settings' table).")
 
 st.divider()
 
-# --- Automatic views -----------------------------------------------------------------------------
+# Automatic views: pick a month and a confidence, and see what the signals say and how far
+# they move the expected spreads away from the benchmark's.
 st.subheader("Automatic views")
 c1, c2 = st.columns([1, 2], gap="large")
 c1.selectbox("Decision month (signal at the month-end close)", [str(m) for m in common.months()][::-1],
              key="month")
 c2.slider("Confidence in the automatic views", 0.05, 1.0, step=0.05, key="confidence", format="%.2f",
-          help="Idzorek confidence. The 2% TE budget is always fully used, so confidence changes the mix "
-               "of bets more than their size (docs/open_decisions.md, item 4).")
+          help="Idzorek confidence. The TE budget is always fully used, so confidence changes the mix "
+               "of bets more than their size.")
 
 x, diag = common.current_proposal(with_manual=False)
 views = diag["views"]
-table = pd.DataFrame({"Signal adds (Q)": views["Q_over_equilibrium"], "Prior spread": views["prior_spread"],
-                      "Posterior spread": views["posterior_spread"]})
+table = pd.DataFrame({"Implied by the benchmark": views["prior_spread"],
+                      "Signal adds (Q)": views["Q_over_equilibrium"],
+                      "After all views": views["posterior_spread"]})
 st.dataframe(table.style.format("{:+.2%}"), width="stretch")
-st.caption("Q is the extra spread the signal adds on top of the spread the benchmark prior already implies "
-           "(equilibrium-relative views, docs/open_decisions.md item 2).")
+st.caption("Each row is a view \"A beats B\", as an expected return spread a year. The benchmark already "
+           "implies a spread; the signal adds Q on top of it; Black-Litterman then combines all views, which "
+           "gives the last column. The benchmark spread assumes a Sharpe ratio of "
+           f"{config.BENCHMARK_SR:.2f} for the benchmark: it changes the spreads shown here, not the weights.")
 
 st.divider()
 
-# --- Manual view ---------------------------------------------------------------------------------
+# Manual view: the user can add one relative view (A beats B by q) with its own confidence.
 st.subheader("Manual relative view")
 st.toggle("Add a manual view", key="use_manual")
 if st.session_state.use_manual:
@@ -70,15 +80,21 @@ if st.session_state.use_manual:
         c1, c2, c3, c4 = st.columns(4)
         c1.selectbox("Outperformer", TICKERS, key="mv_long")
         c2.selectbox("Underperformer", TICKERS, key="mv_short")
-        c3.number_input("Extra spread, % a year", -10.0, 10.0, step=0.5, key="mv_q", format="%.1f")
+        c3.number_input("Extra spread, % a year", -10.0, 10.0, step=0.5, key="mv_q", format="%.2f")
         c4.slider("Confidence", 0.05, 1.0, step=0.05, key="mv_conf", format="%.2f")
 
         s = st.session_state
         if s.mv_long == s.mv_short:
             st.error("Choose two different ETFs: the manual view is ignored until then.")
         else:
-            prior = diag["returns"]["prior_pi"]
-            gap = prior[s.mv_long] - prior[s.mv_short]
-            st.info(f"The prior already expects **{s.mv_long}** to beat **{s.mv_short}** by {common.pct(gap)} "
-                    f"a year. Your view adds {s.mv_q:+.1f}%, so the total view is {common.pct(gap + s.mv_q / 100)}.")
+            prior, post = diag["returns"]["prior_pi"], diag["returns"]["posterior_mu"]
+            gap = prior[s.mv_long] - prior[s.mv_short]                 # what the benchmark implies
+            implied = post[s.mv_long] - post[s.mv_short]               # after the automatic views
+            total = gap + s.mv_q / 100
+            direction = ("adds conviction in" if total > implied + 1e-6 else
+                         "works against" if total < implied - 1e-6 else "leaves unchanged")
+            st.info(f"Expected return of **{s.mv_long}** minus **{s.mv_short}**: {gap:+.2%} a year implied by the "
+                    f"benchmark, **{implied:+.2%}** after the automatic views. Your view sets it at {total:+.2%}, so "
+                    f"it **{direction}** {s.mv_long} over {s.mv_short}. To push further towards {s.mv_long}, enter "
+                    f"more than {(implied - gap) * 100:+.2f}%.")
             st.caption("Open **Proposed Portfolio** to see its effect.")

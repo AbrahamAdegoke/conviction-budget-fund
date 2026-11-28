@@ -18,23 +18,30 @@ common.init_state()
 s = st.session_state
 common.header("Proposed Portfolio", "What would the fund hold after this month's decision?")
 st.caption(f"Decision at the close of {s.month}, traded at the next session · {s.rules_label} · "
-           f"automatic views at {s.confidence:.0%} confidence"
-           + (f" · manual view {s.mv_long} > {s.mv_short} ({s.mv_q:+.1f}%)" if common.manual_view() else ""))
+           f"TE budget {s.te_pct:.1f}% · automatic views at {s.confidence:.0%} confidence"
+           + (f" · manual view {s.mv_long} > {s.mv_short} ({s.mv_q:+.2f}%)" if common.manual_view() else ""))
 
 x, diag = common.current_proposal()
-active = x - BENCH
+active = (x - BENCH).mask(lambda a: a.abs() < 5e-7, 0.0)   # solver noise: show 0.0%, not -0.0%
 
-# --- Headline numbers and rule check -------------------------------------------------------------
+# Headline numbers: risk used, expected extra return, how different the portfolio is,
+# and whether every mandate rule holds.
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Ex-ante tracking error", common.pct(diag["te_ex_ante"]), border=True,
-          help=f"Budget {config.TE_TARGET:.0%}")
+          help=f"Budget {s.te_pct:.1f}% (set on Mandate and Views; the fund uses {config.TE_TARGET:.0%})")
 c2.metric("Expected active return", common.pct(diag["expected_active_return"]), border=True)
 c3.metric("Active share", common.pct(active.abs().sum() / 2, 1), border=True)
-c4.metric("Rules", "✅ All satisfied" if not diag["violations"] else "❌ Violated", border=True)
+c4.metric("Mandate rules", "All met" if not diag["violations"] else "Violated", border=True)
 if diag["violations"]:
     st.error("Violations: " + ", ".join(diag["violations"]))
+if diag["fallback_to_benchmark"]:
+    st.warning("The optimizer found no portfolio that meets the mandate and the tracking-error budget, "
+               "so the fund holds the benchmark this month.")
+elif diag["te_ex_ante"] < common.te_budget() * 0.999:
+    st.info(f"Only {common.pct(diag['te_ex_ante'])} of the {s.te_pct:.1f}% budget is used: the mandate rules stop "
+            "the bets before the budget is reached, so a larger budget would not change this portfolio.")
 
-# --- Weights vs benchmark, and active weights -----------------------------------------------------
+# Weights: the proposed portfolio next to the benchmark, and the over- and underweights.
 classes = {t: c for c, ts in config.ASSET_CLASSES.items() for t in ts}
 xcat = [[classes[t] for t in TICKERS], TICKERS]
 left, right = st.columns([3, 2], gap="large")
@@ -52,18 +59,18 @@ with right:
         marker_color=[common.OVER if v >= 0 else common.UNDER for v in active],
         text=[f"{v:+.1%}" for v in active], textposition="outside",
         hovertemplate="%{y}<br>Active %{x:+.1%}<extra></extra>"))
-    lim = max(0.05, active.abs().max() * 1.35)
+    lim = max(0.05, active.abs().max() * 1.6)                  # room for the labels outside the bars
     common.style(fig, "Active weights (over / under)", height=380)
     fig.update_xaxes(tickformat=".0%", range=[-lim, lim], zeroline=True, zerolinecolor="#c3c2b7")
     fig.update_yaxes(autorange="reversed", gridcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig, width="stretch")
 
-# --- Detail table --------------------------------------------------------------------------------
+# Detail table: weights, active weights and alpha per ETF, plus the effect of the manual view.
 table = pd.DataFrame({"Asset class": [classes[t] for t in TICKERS], "Benchmark": BENCH, "Proposed": x,
                       "Active": active, "Alpha (BL)": diag["returns"]["alpha"]})
 if common.manual_view():
     x0, _ = common.current_proposal(with_manual=False)
-    table["Effect of manual view"] = x - x0
+    table["Effect of manual view"] = (x - x0).mask(lambda d: d.abs() < 5e-7, 0.0)
 signed = [c for c in ["Active", "Alpha (BL)", "Effect of manual view"] if c in table]
 st.dataframe(
     table.style.format("{:.1%}", subset=["Benchmark", "Proposed"])
@@ -72,7 +79,7 @@ st.dataframe(
               subset=signed),
     width="stretch")
 
-# --- Mandate totals ------------------------------------------------------------------------------
+# Mandate totals: the three portfolio-level limits (bond range, EEM share, largest position).
 eq, bonds = config.ASSET_CLASSES["Equities"], config.ASSET_CLASSES["Bonds"]
 m1, m2, m3 = st.columns(3)
 m1.metric("Bonds", common.pct(x[bonds].sum(), 1), help=f"Range {config.BOND_MIN:.0%}–{config.BOND_MAX:.0%}")

@@ -1,10 +1,12 @@
-"""Constrained optimizer and rule checks for the Conviction Budget Fund (Person B).
+"""Constrained optimizer and rule checks for the Conviction Budget Fund.
 
 Problem (LN2 sigma-problem, active weights a = x - b):
     max  alpha' a
     s.t. 1'x = 1,  a' Sigma a <= TE^2,  mandate rules (G x <= h),
          optional LN3 turnover cap sum|x - x_prev| <= cap (Scherer split x = x_prev + u+ - u-).
-Priority when infeasible: mandate and TE are hard; the turnover cap is relaxed in x1.25 steps and flagged.
+Priority when infeasible: mandate and TE are hard; the turnover cap is relaxed in x1.25 steps and
+flagged. If no valid portfolio is found at all, the fund holds the benchmark
+(diagnostics flag 'fallback_to_benchmark').
 
 Entry point for the backtest and the app: propose_portfolio(month, inputs, x_prev, rules, ...).
 rules: 'full' (mandate), 'long_only' (x >= 0 only), 'none' (fully invested only).
@@ -24,11 +26,12 @@ from .data import TICKERS, load_processed
 BENCH = pd.Series(config.BENCHMARK)[TICKERS]
 EQUITY, BONDS = config.ASSET_CLASSES["Equities"], config.ASSET_CLASSES["Bonds"]
 RULES = ("full", "long_only", "none")
+MAX_TWO_WAY_TURNOVER = 2.0      # selling everything and buying a new portfolio: sum|x - x_prev| <= 2
+RELAX_STEP = 1.25               # if infeasible, the turnover cap is multiplied by 1.25 until a solution exists
 
 
-# ---------------------------------------------------------------------------
-# Mandate
-# ---------------------------------------------------------------------------
+# Mandate: write the fund's rules (long-only, bond range, EEM share of equities, 40% cap per ETF)
+# as linear constraints G x <= h, and check a portfolio against them.
 def linear_rules(rules):
     """Mandate as G x <= h."""
     if rules not in RULES:
@@ -42,6 +45,9 @@ def linear_rules(rules):
         G += list(eye); h += [config.MAX_WEIGHT] * n
         G += [-ind(BONDS), ind(BONDS)]; h += [-config.BOND_MIN, config.BOND_MAX]
         G += [ind(["EEM"]) - config.EEM_MAX_SHARE_OF_EQUITY * ind(EQUITY)]; h += [0.0]
+        for t in BONDS:                                      # |x_t - b_t| <= BOND_ACTIVE_CAP
+            G += [ind([t]), -ind([t])]
+            h += [BENCH[t] + config.BOND_ACTIVE_CAP, -(BENCH[t] - config.BOND_ACTIVE_CAP)]
     if not G:
         return np.zeros((0, n)), np.zeros(0)
     return np.array(G), np.array(h)
@@ -62,6 +68,8 @@ def check_rules(x, rules="full", tol=1e-6):
             bad.append("bonds outside 25-45%")
         if x["EEM"] > config.EEM_MAX_SHARE_OF_EQUITY * x[EQUITY].sum() + tol:
             bad.append("EEM > 1/3 equity")
+        if ((x[BONDS] - BENCH[BONDS]).abs() > config.BOND_ACTIVE_CAP + tol).any():
+            bad.append("bond ETF more than 5 points from benchmark")
     return bad
 
 
@@ -70,11 +78,15 @@ def tracking_error(x, Sigma, b=BENCH):
     return float(np.sqrt(a @ np.asarray(Sigma, float) @ a))
 
 
-# ---------------------------------------------------------------------------
-# Optimizer
-# ---------------------------------------------------------------------------
-def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=None, max_turnover=None):
-    """Solve the sigma-problem; returns (weights Series, feasible flag)."""
+# Optimizer: pick the weights with the highest expected extra return while keeping tracking
+# error within budget, the mandate respected and turnover capped (the sigma-problem of LN2).
+def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=None, max_turnover=None,
+             cost=0.0):
+    """Solve the sigma-problem; returns (weights Series, feasible flag).
+
+    cost: penalty per unit of two-way turnover, in the units of alpha (annual return); used only when x_prev
+    is given. 0 = the objective ignores trading costs.
+    """
     n = len(TICKERS)
     a_vec, S, b_vec = np.asarray(alpha, float), np.asarray(Sigma, float), np.asarray(b, float)
     norm = np.linalg.norm(a_vec)
@@ -104,7 +116,11 @@ def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=No
     else:
         z0, bounds = np.zeros(n), None
 
-    res = minimize(lambda z: -d @ A(z), z0, jac=lambda z: pad(-d), bounds=bounds, method="SLSQP",
+    # Objective scaled by 1/|alpha| for conditioning: -(alpha'a - cost * total trade) / |alpha|
+    w = cost / norm if (use_tc and cost > 0 and norm > 1e-12) else 0.0
+    grad = pad(-d) + (np.r_[np.zeros(n), np.full(2 * n, w)] if w else 0.0)
+    objective = (lambda z: -d @ A(z) + w * z[n:].sum()) if w else (lambda z: -d @ A(z))
+    res = minimize(objective, z0, jac=lambda z: grad, bounds=bounds, method="SLSQP",
                    constraints=cons, options={"ftol": 1e-12, "maxiter": 1000})
     x = b_vec + res.x[:n]
     x[np.abs(x) < 1e-9] = 0.0                                 # solver noise
@@ -118,24 +134,24 @@ def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=No
 
 
 def propose_weights(alpha, Sigma, rules="full", x_prev=None, max_turnover=config.MAX_TURNOVER,
-                    te=config.TE_TARGET):
-    """Optimize; if the turnover cap makes it infeasible, relax the cap (x1.25) until feasible.
+                    te=config.TE_TARGET, cost=0.0):
+    """Optimize; if the turnover cap makes it infeasible, relax the cap in x1.25 steps until feasible.
 
-    Returns (weights, ok, relaxed_cap or None).
+    The mandate and the TE budget are hard constraints. The steps can go past the smallest feasible cap
+    (in 2020-03, TE-only portfolio: 31.25% instead of 30.5%). Returns (weights, ok, relaxed_cap or None).
     """
     cap = max_turnover if x_prev is not None else None
-    x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap)
+    x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap, cost=cost)
     relaxed = None
-    while not ok and cap is not None and cap < 2.0:          # 2.0 = maximum two-way turnover
-        cap = min(cap * 1.25, 2.0)
+    while not ok and cap is not None and cap < MAX_TWO_WAY_TURNOVER:
+        cap = min(cap * RELAX_STEP, MAX_TWO_WAY_TURNOVER)
         relaxed = cap
-        x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap)
+        x, ok = optimize(alpha, Sigma, rules, te, x_prev=x_prev, max_turnover=cap, cost=cost)
     return x, ok, relaxed
 
 
-# ---------------------------------------------------------------------------
-# Entry point
-# ---------------------------------------------------------------------------
+# Entry point: one call that gives the proposed portfolio for a month. The backtest and the
+# app both use it, so they always run the same model.
 @dataclass
 class Inputs:
     daily: pd.DataFrame       # daily returns + 'regular' flag
@@ -150,10 +166,11 @@ def load_inputs():
 
 
 def propose_portfolio(month, inputs, x_prev=None, rules="full", confidence=config.DEFAULT_CONFIDENCE,
-                      manual_view=None, max_turnover=config.MAX_TURNOVER, te=config.TE_TARGET):
+                      manual_view=None, max_turnover=config.MAX_TURNOVER, te=config.TE_TARGET, cost=None):
     """Weights decided at the close of `month` (traded next session, earn month t+1).
 
-    x_prev: pre-trade (drifted) weights; None = no turnover cap (e.g. first month or the app).
+    x_prev: pre-trade (drifted) weights; None = no turnover cap and no cost (e.g. first month or the app).
+    cost: turnover penalty in annual-return units; None = config.cost_penalty() (0 unless a horizon is set).
     manual_view: optional {'long', 'short', 'q', 'confidence'} relative view (q on top of equilibrium).
     Returns (weights Series, diagnostics dict).
     """
@@ -169,13 +186,18 @@ def propose_portfolio(month, inputs, x_prev=None, rules="full", confidence=confi
     alpha = bl_alpha(Sigma, P, Q, conf)
     if x_prev is not None:
         x_prev = pd.Series(x_prev, index=TICKERS) if not isinstance(x_prev, pd.Series) else x_prev[TICKERS]
-    x, ok, relaxed = propose_weights(alpha, Sigma, rules, x_prev, max_turnover, te)
+    cost = config.cost_penalty() if cost is None else cost
+    x, ok, relaxed = propose_weights(alpha, Sigma, rules, x_prev, max_turnover, te, cost)
+    fallback = not ok
+    if fallback:   # no valid portfolio found: hold the benchmark, which always meets the mandate (TE = 0)
+        x = BENCH.copy()
 
     pi = implied_excess_returns(Sigma, BENCH, config.BENCHMARK_SR)[0]   # display only
     a = (x - BENCH).values
     diagnostics = {
         "month": month,
         "ok": ok,
+        "fallback_to_benchmark": fallback,
         "violations": check_rules(x, rules),
         "relaxed_turnover_cap": relaxed,
         "te_ex_ante": tracking_error(x, Sigma),
@@ -189,3 +211,30 @@ def propose_portfolio(month, inputs, x_prev=None, rules="full", confidence=confi
                                "posterior_spread": P @ (pi + alpha)}, index=names),
     }
     return x, diagnostics
+
+
+# Naive mean-variance benchmark strategy (the proposal's 4th portfolio): same optimizer, mandate, TE budget,
+# turnover cap and cost penalty, but alpha is simply the average daily return of the last 252 sessions.
+def naive_alpha(daily, month_end, window=config.COV_WINDOW):
+    """Annualized mean of the last `window` regular daily returns up to month_end (no later data)."""
+    hist = daily.loc[:pd.Timestamp(month_end)]
+    hist = hist.loc[hist["regular"].astype(bool), TICKERS].tail(window)
+    return hist.mean().to_numpy(float) * config.ANNUALIZATION
+
+
+def propose_mvo(month, inputs, x_prev=None, rules="full", max_turnover=config.MAX_TURNOVER,
+                te=config.TE_TARGET, cost=None):
+    """Naive MVO weights for `month` (same diagnostics keys as propose_portfolio that the backtest logs)."""
+    month = pd.Period(month, "M")
+    Sigma, _, _ = covariance_at(inputs.daily, inputs.month_ends[month])
+    alpha = naive_alpha(inputs.daily, inputs.month_ends[month])
+    if x_prev is not None:
+        x_prev = pd.Series(x_prev, index=TICKERS) if not isinstance(x_prev, pd.Series) else x_prev[TICKERS]
+    cost = config.cost_penalty() if cost is None else cost
+    x, ok, relaxed = propose_weights(alpha, Sigma, rules, x_prev, max_turnover, te, cost)
+    if not ok:
+        x = BENCH.copy()
+    return x, {"ok": ok, "fallback_to_benchmark": not ok, "violations": check_rules(x, rules),
+               "relaxed_turnover_cap": relaxed, "te_ex_ante": tracking_error(x, Sigma),
+               "expected_active_return": float(alpha @ (x - BENCH).values),
+               "turnover": None if x_prev is None else float(np.abs(x - x_prev).sum())}

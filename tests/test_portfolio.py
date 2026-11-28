@@ -34,7 +34,8 @@ def random_alpha(seed):
     return np.random.default_rng(seed).normal(0, 0.01, N)
 
 
-# --- Covariance -------------------------------------------------------------
+# Covariance: Ledoit-Wolf is checked against a slow direct implementation and against
+# data whose true correlation is constant; the window must never use later data.
 def brute_force_delta(X):
     """Direct (loop) implementation of the Ledoit-Wolf constant-correlation intensity."""
     T, n = X.shape
@@ -82,7 +83,8 @@ def test_covariance_uses_only_past_regular_returns():
         covariance_at(daily, dates[100])                     # fewer than 252 observations
 
 
-# --- Black-Litterman ----------------------------------------------------------
+# Black-Litterman: the prior must reproduce LN4 Example 4, and the posterior must behave as
+# expected (tau cancels, no extra view gives the prior, full confidence meets the views).
 def test_ln4_example_4_implied_returns():
     s = np.array([0.15, 0.20, 0.25, 0.30])
     C = np.array([[1, .1, .4, .5], [.1, 1, .7, .4], [.4, .7, 1, .8], [.5, .4, .8, 1]])
@@ -105,7 +107,7 @@ def test_posterior_properties():
         bl_posterior(pi, Sigma, P, Q, 0.0)
 
 
-# --- Optimizer ---------------------------------------------------------------
+# Optimizer: closed-form check, mandate rules, TE budget, turnover cap and its relaxation.
 def test_unconstrained_optimizer_matches_closed_form():
     Sigma, alpha = make_sigma(), random_alpha(4)
     Si, one = np.linalg.inv(Sigma), np.ones(N)
@@ -150,3 +152,48 @@ def test_turnover_cap_is_respected_and_relaxed_only_when_needed():
     x, ok, relaxed = propose_weights(alpha, Sigma, "full", x_prev=far, max_turnover=0.05)
     assert ok and relaxed is not None and relaxed > 0.05
     assert check_rules(x, "full") == [] and tracking_error(x, Sigma) <= config.TE_TARGET * (1 + 1e-5)
+    # Relaxed in x1.25 steps: the cap is 0.05 x 1.25^k, it is respected, and the previous step was infeasible
+    k = round(np.log(relaxed / 0.05) / np.log(1.25))
+    assert k >= 1 and np.isclose(relaxed, 0.05 * 1.25 ** k)
+    assert np.abs(x - far).sum() <= relaxed + 1e-6
+    _, ok_below = optimize(alpha, Sigma, "full", config.TE_TARGET, x_prev=far, max_turnover=relaxed / 1.25)
+    assert not ok_below
+
+
+def test_bond_active_cap_is_part_of_the_mandate():
+    x = BENCH.copy()
+    x["IEF"] += 0.06
+    x["SPY"] -= 0.06
+    assert "bond ETF more than 5 points from benchmark" in check_rules(x, "full")
+    assert check_rules(x, "long_only") == []                   # not a rule of the TE-only portfolio
+    alpha = np.zeros(N)
+    alpha[TICKERS.index("TLT")], alpha[TICKERS.index("IEF")] = 0.02, -0.02   # push a large bond swap
+    Sigma = make_sigma()
+    free, ok_free = optimize(alpha, Sigma, "long_only")
+    capped, ok = optimize(alpha, Sigma, "full")
+    bonds = config.ASSET_CLASSES["Bonds"]
+    assert ok_free and (free[bonds] - BENCH[bonds]).abs().max() > config.BOND_ACTIVE_CAP   # the cap binds
+    assert ok and (capped[bonds] - BENCH[bonds]).abs().max() <= config.BOND_ACTIVE_CAP + 1e-6
+
+
+def test_cost_penalty_units_and_effect():
+    assert np.isclose(config.cost_penalty(5, 3), 0.002)        # 5 bp x 12 / 3 = 0.20% a year per unit traded
+    assert config.cost_penalty(5, 0) == 0.0                     # no horizon = the optimizer ignores costs
+    Sigma, alpha = make_sigma(), random_alpha(7)
+    x_prev = BENCH.copy()
+    turnover = lambda x: np.abs(x - x_prev).sum()
+    free, ok_free = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20)
+    cheap, ok_cheap = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20, cost=0.002)
+    dear, ok_dear = optimize(alpha, Sigma, "full", x_prev=x_prev, max_turnover=0.20, cost=10.0)
+    assert ok_free and ok_cheap and ok_dear
+    assert turnover(free) > 0.01 and turnover(cheap) <= turnover(free) + 1e-6
+    assert turnover(dear) < 1e-4                                 # a trade that cannot pay its cost is not made
+
+
+def test_overlapping_certain_views_give_a_clear_error():
+    Sigma, pi = make_sigma(), np.zeros(N)
+    P = np.zeros((2, N)); P[0, [6, 7]] = [1, -1]; P[1, [6, 7]] = [-1, 1]   # VNQ > GLD and GLD > VNQ
+    Q = np.array([0.01, 0.01])
+    with pytest.raises(ValueError, match="100% confidence overlap"):
+        bl_posterior(pi, Sigma, P, Q, [1.0, 1.0])
+    assert np.isfinite(bl_posterior(pi, Sigma, P, Q, [1.0, 0.9])).all()    # one view below 100%: fine
