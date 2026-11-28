@@ -100,8 +100,8 @@ docs/                 methodology.md: every method choice and why
 
 ## Data
 
-ETF prices and total return indices: Refinitiv Datastream (licensed, not redistributed). The raw export
-`data/raw/ETF.xlsx` is not in the repository (it is listed in `.gitignore`). The tests, the backtest and the
-app do not need it: they read `data/processed/`. To rebuild `data/processed/` from scratch, put your own
-Datastream export at `data/raw/ETF.xlsx` and run `notebooks/01_data_audit.ipynb`.
+ETF prices and total return indices: Refinitiv Datastream, raw export in `data/raw/ETF.xlsx`. The data are
+licensed: do not redistribute them (this repository is private for that reason). The tests, the backtest and
+the app read the cleaned files in `data/processed/`; to rebuild them from the raw export, run
+`notebooks/01_data_audit.ipynb`.
 Risk-free rate: FRED DGS1MO (`data/raw/dgs1mo.csv`, public).

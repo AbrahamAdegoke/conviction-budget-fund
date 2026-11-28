@@ -14,7 +14,7 @@ at the next session. Choices are made on the calibration period 2009–2015; 201
 | Item | Choice |
 |---|---|
 | ETFs | SPY, EFA, EEM (equities) · IEF, LQD, TLT (bonds) · VNQ, GLD (alternatives) |
-| Prices | Refinitiv Datastream, daily price and **total return index** (dividends reinvested), 3 Jan 2007 – 4 Nov 2026. Licensed: the raw file `data/raw/ETF.xlsx` is not in the repository |
+| Prices | Refinitiv Datastream, daily price and **total return index** (dividends reinvested), 3 Jan 2007 – 4 Nov 2026. Raw export in `data/raw/ETF.xlsx`; licensed, not to be redistributed |
 | Risk-free rate | FRED DGS1MO (1-month T-bill), used only for the Sharpe ratio |
 | Calendar | Official NYSE sessions only (4,992 sessions) |
 
