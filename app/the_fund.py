@@ -115,9 +115,9 @@ rows = [
     ("Sharpe ratio", "Return above cash per unit of total risk. Is the return worth the risk?", "Sharpe", "{:.2f}"),
     ("Max drawdown", "Worst fall from a previous peak. What an investor actually feels.", "Max drawdown", "{:.1%}"),
     ("Volatility", "How much returns swing, a year.", "Volatility", "{:.1%}"),
-    ("Tracking error", "How much the fund's return differs from the benchmark's: the risk of being different.",
+    ("Tracking error", "How much the fund's return differs from the benchmark's.",
      "Realized TE", "{:.2%}"),
-    ("Information ratio", "Extra return ÷ tracking error: the Sharpe ratio of the bets. Judges the manager.",
+    ("Information ratio", "Extra return ÷ tracking error. Judges the manager.",
      "Information ratio", "{:.2f}"),
     ("Expected shortfall 95%", "Average loss on the worst 5% of days.", "ES 95% (daily)", "{:.2%}"),
 ]
