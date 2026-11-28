@@ -130,7 +130,7 @@ def optimize(alpha, Sigma, rules="full", te=config.TE_TARGET, b=BENCH, x_prev=No
     feasible = not check_rules(x, rules) and tracking_error(x, S, b_vec) <= te * (1 + 1e-5)
     if use_tc:
         feasible = feasible and np.abs(x.values - x0).sum() <= max_turnover + 1e-6
-    return x, feasible
+    return x, bool(res.success) or feasible
 
 
 def propose_weights(alpha, Sigma, rules="full", x_prev=None, max_turnover=config.MAX_TURNOVER,
