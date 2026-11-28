@@ -108,7 +108,7 @@ fmt = lambda row: row.map(lambda v: "–" if pd.isna(v) or (v == 0 and row.name 
                           (f"{v:.2f}" if row.name in ratios else f"{v:.2%}"))
 st.dataframe(show.apply(fmt, axis=1).style.apply(
                  lambda row: ["background-color: #e8f0fb" if row.name in key_rows else ""] * len(row), axis=1),
-             width="stretch", height=560, column_config={"_index": st.column_config.Column(width=250)})
+             width="stretch", height=720, column_config={"_index": st.column_config.Column(width=250)})
 st.caption("Annualized except drawdowns and ES (daily). Benchmark active metrics are zero by construction (–). "
            "Benchmark turnover is its monthly rebalancing, charged no cost.")
 

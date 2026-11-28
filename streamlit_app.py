@@ -5,6 +5,7 @@ import streamlit as st
 from app import common
 
 st.set_page_config(page_title="Conviction Budget Fund", layout="wide")
+st.markdown("<style>[data-testid^='stMetricDeltaIcon'], [data-testid='stMetricDelta'] svg {display: none;}</style>", unsafe_allow_html=True)
 
 pages = [
     st.Page("app/the_fund.py", title="The Fund", default=True),

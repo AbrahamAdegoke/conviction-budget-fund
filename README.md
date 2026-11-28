@@ -3,6 +3,9 @@
 A multi-asset ETF fund that tilts a fixed benchmark with Black-Litterman views, within a 2% tracking-error budget
 and a long-only mandate. Monthly walk-forward backtest, January 2016 – October 2026, and a Streamlit app.
 
+
+**Live app:** https://conviction-budget-fund.streamlit.app
+
 ## Setup
 
 Python 3.11+. Run every command from the repository root (otherwise `src` is not found).
